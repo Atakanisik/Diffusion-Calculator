@@ -632,13 +632,16 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
         % Button pushed function: FilterDWIBetaButton
         function FilterDWIBetaButtonPushed(app, event)
-
+            app.StateField.Value = "Filtering IMAGE...";
+            pause(0.5);
             app.smoothDegree = app.SmoothingDegreeEditField.Value;
             for idx = 1:1:app.Z
 
                 patch = std2(app.vol(:,:,idx));
                 app.vol(:,:,idx) = imnlmfilt(app.vol(:,:,idx),DegreeOfSmoothing=app.smoothDegree*patch);
             end
+            app.StateField.Value = "Filtering Done";
+
         end
 
         % Button pushed function: DrawMultipleROIButton
