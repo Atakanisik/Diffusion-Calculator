@@ -59,6 +59,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         PatientsListBox                 matlab.ui.control.ListBox
         PatientsListBoxLabel            matlab.ui.control.Label
         SequencesPanel                  matlab.ui.container.Panel
+        LoadToSegmenterButton           matlab.ui.control.Button
         FramesEditField                 matlab.ui.control.NumericEditField
         FramesEditFieldLabel            matlab.ui.control.Label
         LoadtoViewerButton              matlab.ui.control.Button
@@ -85,6 +86,14 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         UIAxes3_3                       matlab.ui.control.UIAxes
         UIAxes3_2                       matlab.ui.control.UIAxes
         UIAxes3                         matlab.ui.control.UIAxes
+        SegmenterPreAlphaTab            matlab.ui.container.Tab
+        VisualAnalyzeButton             matlab.ui.control.Button
+        SegmentROIButton                matlab.ui.control.Button
+        SegmentButton                   matlab.ui.control.Button
+        SegmenterSlider                 matlab.ui.control.Slider
+        SegmenterSliderLabel            matlab.ui.control.Label
+        UIAxes9_2                       matlab.ui.control.UIAxes
+        UIAxes9                         matlab.ui.control.UIAxes
     end
 
     
@@ -156,6 +165,17 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         adctype;
         frames;
         smoothDegree = 0.5;
+        segmenterVol;
+        segmenterM;
+        segmenterN;
+        segmenterZ;
+        segmenterBW;
+        segmenterMasked;
+        segmentROI;
+        segmentIm;
+        segroi;
+        tempax;
+        analyzeFigure;
     end
     
 
@@ -632,7 +652,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
         % Button pushed function: FilterDWIBetaButton
         function FilterDWIBetaButtonPushed(app, event)
-            app.StateField.Value = "Filtering IMAGE...";
+            app.StateField.Value = "Filtering Image...";
             pause(0.5);
             app.smoothDegree = app.SmoothingDegreeEditField.Value;
             for idx = 1:1:app.Z
@@ -641,7 +661,6 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.vol(:,:,idx) = imnlmfilt(app.vol(:,:,idx),DegreeOfSmoothing=app.smoothDegree*patch);
             end
             app.StateField.Value = "Filtering Done";
-
         end
 
         % Button pushed function: DrawMultipleROIButton
@@ -700,6 +719,134 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes2,'B-Value');
             ylabel(app.UIAxes2,'S / S0');
 
+        end
+
+        % Button pushed function: LoadToSegmenterButton
+        function LoadToSegmenterButtonPushed(app, event)
+             app.DicomState.Value = "Loading..";
+            pause(0.5);
+             try
+            app.patienttable = app.collection(find(app.collection.PatientName == app.patientvalue),1:end);
+            I = find(app.patienttable.SeriesDescription == app.sequencevalue);
+            I = I(find(I == app.SequencesListBox.Value));
+            
+            fileNames = app.patienttable.Filenames(I);
+            fileNames = fileNames{1,1};
+             % app.rows = app.patienttable.Rows(I);
+            % app.cols = app.patienttable.Columns(I);
+            app.segmenterVol = [];
+            for i = 1:1:length(fileNames)
+                f = fileNames(i);
+                svol = dicomread(f);
+                app.segmenterVol = cat(3,app.segmenterVol,svol);
+            end
+            [app.segmenterM, app.segmenterN, app.segmenterZ] = size(app.segmenterVol);
+            
+            app.segmenterVol = app.segmenterVol(:,:,1:end);
+            
+            imagesc(app.UIAxes9,app.segmenterVol(:,:,1));
+            colormap(app.UIAxes9,'gray');
+            xlim(app.UIAxes9,[0 ,app.segmenterN]);
+            ylim(app.UIAxes9,[0, app.segmenterM]);
+            if app.segmenterZ > 1
+            app.SegmenterSlider.Limits = [1,app.segmenterZ];
+            app.SegmenterSlider.MajorTicks = 1:round(app.segmenterZ/10):app.segmenterZ;
+            app.SegmenterSlider.MajorTickLabels = string(1:round(app.segmenterZ/10):app.segmenterZ);
+            app.SegmenterSlider.MinorTicks = 1:1:app.segmenterZ;
+            else
+                app.SegmenterSlider.Limits = [0,1];
+                app.SegmenterSlider.MajorTicks = 0:1;
+                app.SegmenterSlider.MajorTickLabels = string(0:1);
+                app.SegmenterSlider.MinorTicks = [];
+            end
+
+            app.DicomState.Value = "Images Loaded";
+              catch
+                  app.DicomState.Value = "Error Occured";
+              end
+        end
+
+        % Value changed function: SegmenterSlider
+        function SegmenterSliderValueChanged(app, event)
+             value = round(app.SegmenterSlider.Value);
+            
+            imagesc(app.UIAxes9,app.segmenterVol(:,:,value));
+            
+            xlim(app.UIAxes9,[0 ,app.segmenterN]);
+            ylim(app.UIAxes9,[0, app.segmenterM]);
+            
+        end
+
+        % Button pushed function: SegmentButton
+        function SegmentButtonPushed(app, event)
+            app.segmentIm = app.segmentROI;
+            s = rng;
+            rng('default');
+            L = imsegkmeans(single(app.segmentIm),2,'NumAttempts',2);
+            rng(s);
+            app.segmenterBW = L == 2;
+            app.segmenterBW = imcomplement(app.segmenterBW);
+            iterations = 150;
+            app.segmenterBW = activecontour(app.segmentIm, app.segmenterBW, iterations, 'edge');
+
+
+            app.segmenterBW = imfill(app.segmenterBW, 'holes');
+
+
+            radius = 2;
+            decomposition = 0;
+            se = strel('disk', radius, decomposition);
+            app.segmenterBW = imdilate(app.segmenterBW, se);
+
+
+            iterations = 150;
+            app.segmenterBW = activecontour(app.segmentIm, app.segmenterBW, iterations, 'Chan-Vese');
+
+
+            
+            cc = bwconncomp(app.segmenterBW);
+            rp = regionprops(cc,'Area');
+            areas = cell2mat(struct2cell(rp));
+            app.segmenterBW = bwareaopen(app.segmenterBW,max(areas)-100);
+            app.segmenterMasked = app.segmentIm;
+            app.segmenterMasked(~app.segmenterBW) = 0;
+            imagesc(app.UIAxes9_2,app.segmenterMasked);
+            colormap(app.UIAxes9_2,'gray');
+        end
+
+        % Button pushed function: SegmentROIButton
+        function SegmentROIButtonPushed(app, event)
+            delete(findall(app.UIAxes9,'Type','images.roi'));
+            delete(app.tempax);
+            app.segroi = drawfreehand('Parent',app.UIAxes9);
+            app.segmentROI = imadjust(app.segmenterVol(:,:,round(app.SegmenterSlider.Value)));
+            segMask = createMask(app.segroi);
+            app.segmentROI(~segMask) = 0;
+            
+        end
+
+        % Button pushed function: VisualAnalyzeButton
+        function VisualAnalyzeButtonPushed(app, event)
+            app.analyzeFigure = clf();
+            ax1 = axes(app.analyzeFigure);
+            app.tempax = copyobj(ax1,app.analyzeFigure);
+            ax2 = copyobj(ax1,app.analyzeFigure);
+            imagesc(ax1,imadjust(app.segmenterVol(:,:,round(app.SegmenterSlider.Value))));
+            contour(app.tempax,app.segmenterBW,[1 1],'LineWidth',3);
+            contourf(ax2,app.segmenterBW,'FaceAlpha',0.2);
+            colormap(ax1,'gray');
+            colormap(app.tempax,"jet");
+            colormap(ax2,'jet');
+            
+            app.tempax.UserData = linkprop([ax1,app.tempax],...
+    {'Position','InnerPosition','DataAspectRatio','xtick','ytick', ...
+    'ydir','xdir','xlim','ylim'});
+                  ax2.UserData = linkprop([ax1,ax2],...
+    {'Position','InnerPosition','DataAspectRatio','xtick','ytick', ...
+    'ydir','xdir','xlim','ylim'});
+            app.tempax.Visible = "off";
+            ax2.Visible = "off";
+            
         end
     end
 
@@ -1024,13 +1171,13 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create LoadtoCalculatorButton
             app.LoadtoCalculatorButton = uibutton(app.SequencesPanel, 'push');
             app.LoadtoCalculatorButton.ButtonPushedFcn = createCallbackFcn(app, @LoadtoCalculatorButtonPushed, true);
-            app.LoadtoCalculatorButton.Position = [1363 35 112 25];
+            app.LoadtoCalculatorButton.Position = [1357 25 120 26];
             app.LoadtoCalculatorButton.Text = 'Load to Calculator';
 
             % Create LoadtoViewerButton
             app.LoadtoViewerButton = uibutton(app.SequencesPanel, 'push');
             app.LoadtoViewerButton.ButtonPushedFcn = createCallbackFcn(app, @LoadtoViewerButtonPushed, true);
-            app.LoadtoViewerButton.Position = [1367 88 105 26];
+            app.LoadtoViewerButton.Position = [1357 111 120 26];
             app.LoadtoViewerButton.Text = 'Load to Viewer';
 
             % Create FramesEditFieldLabel
@@ -1042,6 +1189,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create FramesEditField
             app.FramesEditField = uieditfield(app.SequencesPanel, 'numeric');
             app.FramesEditField.Position = [1401 277 93 32];
+
+            % Create LoadToSegmenterButton
+            app.LoadToSegmenterButton = uibutton(app.SequencesPanel, 'push');
+            app.LoadToSegmenterButton.ButtonPushedFcn = createCallbackFcn(app, @LoadToSegmenterButtonPushed, true);
+            app.LoadToSegmenterButton.Position = [1357 66 120 26];
+            app.LoadToSegmenterButton.Text = 'Load To Segmenter';
 
             % Create PatientsPanel
             app.PatientsPanel = uipanel(app.DicomTab);
@@ -1187,6 +1340,55 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.ColorMapsDropDown = uidropdown(app.DWIMAPSPanel);
             app.ColorMapsDropDown.ValueChangedFcn = createCallbackFcn(app, @ColorMapsDropDownValueChanged, true);
             app.ColorMapsDropDown.Position = [1409 22 100 22];
+
+            % Create SegmenterPreAlphaTab
+            app.SegmenterPreAlphaTab = uitab(app.TabGroup);
+            app.SegmenterPreAlphaTab.Title = 'Segmenter(PreAlpha)';
+
+            % Create UIAxes9
+            app.UIAxes9 = uiaxes(app.SegmenterPreAlphaTab);
+            title(app.UIAxes9, 'Title')
+            xlabel(app.UIAxes9, 'X')
+            ylabel(app.UIAxes9, 'Y')
+            zlabel(app.UIAxes9, 'Z')
+            app.UIAxes9.Position = [36 165 689 633];
+
+            % Create UIAxes9_2
+            app.UIAxes9_2 = uiaxes(app.SegmenterPreAlphaTab);
+            title(app.UIAxes9_2, 'Title')
+            xlabel(app.UIAxes9_2, 'X')
+            ylabel(app.UIAxes9_2, 'Y')
+            zlabel(app.UIAxes9_2, 'Z')
+            app.UIAxes9_2.Position = [818 165 689 633];
+
+            % Create SegmenterSliderLabel
+            app.SegmenterSliderLabel = uilabel(app.SegmenterPreAlphaTab);
+            app.SegmenterSliderLabel.HorizontalAlignment = 'right';
+            app.SegmenterSliderLabel.Position = [37 88 98 22];
+            app.SegmenterSliderLabel.Text = 'Segmenter Slider';
+
+            % Create SegmenterSlider
+            app.SegmenterSlider = uislider(app.SegmenterPreAlphaTab);
+            app.SegmenterSlider.ValueChangedFcn = createCallbackFcn(app, @SegmenterSliderValueChanged, true);
+            app.SegmenterSlider.Position = [156 97 557 3];
+
+            % Create SegmentButton
+            app.SegmentButton = uibutton(app.SegmenterPreAlphaTab, 'push');
+            app.SegmentButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentButtonPushed, true);
+            app.SegmentButton.Position = [734 73 103 35];
+            app.SegmentButton.Text = 'Segment';
+
+            % Create SegmentROIButton
+            app.SegmentROIButton = uibutton(app.SegmenterPreAlphaTab, 'push');
+            app.SegmentROIButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentROIButtonPushed, true);
+            app.SegmentROIButton.Position = [737 22 100 23];
+            app.SegmentROIButton.Text = 'Segment ROI';
+
+            % Create VisualAnalyzeButton
+            app.VisualAnalyzeButton = uibutton(app.SegmenterPreAlphaTab, 'push');
+            app.VisualAnalyzeButton.ButtonPushedFcn = createCallbackFcn(app, @VisualAnalyzeButtonPushed, true);
+            app.VisualAnalyzeButton.Position = [737 116 98 23];
+            app.VisualAnalyzeButton.Text = 'Visual Analyze';
 
             % Show the figure after all components are created
             app.DiffusonCalculatorforSIEMENSUIFigure.Visible = 'on';
