@@ -68,6 +68,10 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         SequencesListBoxLabel           matlab.ui.control.Label
         ViewerTab                       matlab.ui.container.Tab
         ImageViewPanel_2                matlab.ui.container.Panel
+        BritghtnessSlider               matlab.ui.control.Slider
+        BritghtnessSliderLabel          matlab.ui.control.Label
+        ContrastSlider                  matlab.ui.control.RangeSlider
+        ContrastSliderLabel             matlab.ui.control.Label
         ColormapDropDown                matlab.ui.control.DropDown
         ColormapDropDownLabel           matlab.ui.control.Label
         InstanceNumberEditField         matlab.ui.control.NumericEditField
@@ -157,6 +161,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         sequencevalue;
         patienttable;
         viewVol;
+        viewSlidervalue;
         viewM;
         viewN;
         viewZ;
@@ -176,6 +181,11 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         segroi;
         tempax;
         analyzeFigure;
+        contrastLowLimit=0;
+        contrastUpLimit=4;
+        contrastValue;
+        brightnessValue=0;
+        viewAdjustedImage;
     end
     
 
@@ -343,7 +353,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.showBval = find(app.bvals == app.BValueKnob.Value);
             app.EditField.Value = app.BValueKnob.Value;
             % imshow(adapthisteq(uint8(app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)))),'clipLimit',0.005,'Distribution','rayleigh'),'Parent',app.UIAxes);
-            imagesc(app.UIAxes,app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals))));
+            imagesc(app.UIAxes,imadjust(app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)))));
             colormap(app.UIAxes,"gray");
             xlim(app.UIAxes,[0 ,app.N]);
             ylim(app.UIAxes,[0, app.M]);
@@ -357,7 +367,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.showBval = find(app.bvals == app.BValueKnob.Value);
             app.EditField_2.Value = app.SliceKnob.Value;
             % imshow(adapthisteq(uint8(app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)))),'clipLimit',0.005,'Distribution','rayleigh'),'Parent',app.UIAxes);
-            imagesc(app.UIAxes,app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals))));
+            imagesc(app.UIAxes,imadjust(app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)))));
             colormap(app.UIAxes,"gray");
             xlim(app.UIAxes,[0 ,app.N]);
             ylim(app.UIAxes,[0, app.M]);
@@ -540,7 +550,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.SliceKnob.ItemsData = (1:app.instanceSize);
             
             % imshow(adapthisteq(uint8(app.vol(:,:,1+(app.showBval*app.instanceSize))),'clipLimit',0.005,'Distribution','rayleigh'),'Parent',app.UIAxes);
-            imagesc(app.UIAxes,app.vol(:,:,1+(app.showBval*app.instanceSize)));
+            imagesc(app.UIAxes,imadjust(app.vol(:,:,1+(app.showBval*app.instanceSize))));
             colormap(app.UIAxes,"gray");
             title(app.UIAxes,'IMAGE');
             xlim(app.UIAxes,[0 ,app.N]);
@@ -597,7 +607,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             
             app.viewVol = app.viewVol(:,:,1:end);
             
-            imagesc(app.UIAxes8,app.viewVol(:,:,1));
+            imagesc(app.UIAxes8,imadjust(app.viewVol(:,:,app.ViewSlider.Limits(1))));
             colormap(app.UIAxes8,app.ColormapDropDown.Value);
             xlim(app.UIAxes8,[0 ,app.viewN]);
             ylim(app.UIAxes8,[0, app.viewM]);
@@ -612,23 +622,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.ViewSlider.MajorTickLabels = string(0:1);
                 app.ViewSlider.MinorTicks = [];
             end
-
+            app.ViewSlider.Value = 1;
+            app.InstanceNumberEditField.Value = app.ViewSlider.Value;
             app.DicomState.Value = "Images Loaded";
               catch
                   app.DicomState.Value = "Error Occured";
               end
-            
-        end
-
-        % Value changed function: ViewSlider
-        function ViewSliderValueChanged(app, event)
-            value = round(app.ViewSlider.Value);
-            app.InstanceNumberEditField.Value = value;
-            imagesc(app.UIAxes8,app.viewVol(:,:,value));
-            colormap(app.UIAxes8,app.ColormapDropDown.Value);
-            xlim(app.UIAxes8,[0 ,app.viewN]);
-            ylim(app.UIAxes8,[0, app.viewM]);
-
             
         end
 
@@ -846,6 +845,35 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
     'ydir','xdir','xlim','ylim'});
             app.tempax.Visible = "off";
             ax2.Visible = "off";
+            
+        end
+
+        % Value changing function: ContrastSlider
+        function ContrastSliderValueChanging(app, event)
+            app.contrastValue = event.Value;
+            app.contrastLowLimit = app.contrastValue(1);
+            app.contrastUpLimit = app.contrastValue(2);
+            
+            app.viewAdjustedImage = imadjust(app.viewVol(:,:,round(app.ViewSlider.Value)),[app.contrastLowLimit/255, app.contrastUpLimit/255],[])
+            imagesc(app.UIAxes8,app.viewAdjustedImage+app.brightnessValue);
+        end
+
+        % Value changing function: ViewSlider
+        function ViewSliderValueChanging(app, event)
+            app.viewSlidervalue = round(event.Value);
+            app.InstanceNumberEditField.Value = app.viewSlidervalue;
+            
+            imagesc(app.UIAxes8,imadjust(app.viewVol(:,:,app.viewSlidervalue)));
+            colormap(app.UIAxes8,app.ColormapDropDown.Value);
+            xlim(app.UIAxes8,[0 ,app.viewN]);
+            ylim(app.UIAxes8,[0, app.viewM]);
+        end
+
+        % Value changing function: BritghtnessSlider
+        function BritghtnessSliderValueChanging(app, event)
+            app.brightnessValue = event.Value*(2^16);
+            app.viewAdjustedImage = imadjust(app.viewVol(:,:,round(app.ViewSlider.Value)),[app.contrastLowLimit/255, app.contrastUpLimit/255],[])
+            imagesc(app.UIAxes8,app.viewAdjustedImage+app.brightnessValue);
             
         end
     end
@@ -1231,7 +1259,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes8, 'X')
             ylabel(app.UIAxes8, 'Y')
             zlabel(app.UIAxes8, 'Z')
-            app.UIAxes8.Position = [82 134 1400 611];
+            app.UIAxes8.Position = [82 134 1353 611];
 
             % Create ViewSliderLabel
             app.ViewSliderLabel = uilabel(app.ImageViewPanel_2);
@@ -1241,8 +1269,10 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
             % Create ViewSlider
             app.ViewSlider = uislider(app.ImageViewPanel_2);
-            app.ViewSlider.ValueChangedFcn = createCallbackFcn(app, @ViewSliderValueChanged, true);
+            app.ViewSlider.Limits = [1 100];
+            app.ViewSlider.ValueChangingFcn = createCallbackFcn(app, @ViewSliderValueChanging, true);
             app.ViewSlider.Position = [504 85 672 3];
+            app.ViewSlider.Value = 1;
 
             % Create InstanceNumberEditFieldLabel
             app.InstanceNumberEditFieldLabel = uilabel(app.ImageViewPanel_2);
@@ -1264,6 +1294,33 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.ColormapDropDown = uidropdown(app.ImageViewPanel_2);
             app.ColormapDropDown.ValueChangedFcn = createCallbackFcn(app, @ColormapDropDownValueChanged, true);
             app.ColormapDropDown.Position = [1412 62 100 22];
+
+            % Create ContrastSliderLabel
+            app.ContrastSliderLabel = uilabel(app.ImageViewPanel_2);
+            app.ContrastSliderLabel.HorizontalAlignment = 'right';
+            app.ContrastSliderLabel.Position = [1455 109 50 22];
+            app.ContrastSliderLabel.Text = 'Contrast';
+
+            % Create ContrastSlider
+            app.ContrastSlider = uislider(app.ImageViewPanel_2, 'range');
+            app.ContrastSlider.Limits = [0 5];
+            app.ContrastSlider.Orientation = 'vertical';
+            app.ContrastSlider.ValueChangingFcn = createCallbackFcn(app, @ContrastSliderValueChanging, true);
+            app.ContrastSlider.Position = [1480 152 3 569];
+            app.ContrastSlider.Value = [0 1];
+
+            % Create BritghtnessSliderLabel
+            app.BritghtnessSliderLabel = uilabel(app.ImageViewPanel_2);
+            app.BritghtnessSliderLabel.HorizontalAlignment = 'right';
+            app.BritghtnessSliderLabel.Position = [5 110 65 22];
+            app.BritghtnessSliderLabel.Text = 'Britghtness';
+
+            % Create BritghtnessSlider
+            app.BritghtnessSlider = uislider(app.ImageViewPanel_2);
+            app.BritghtnessSlider.Limits = [-1 1];
+            app.BritghtnessSlider.Orientation = 'vertical';
+            app.BritghtnessSlider.ValueChangingFcn = createCallbackFcn(app, @BritghtnessSliderValueChanging, true);
+            app.BritghtnessSlider.Position = [33 151 3 580];
 
             % Create MapsTab
             app.MapsTab = uitab(app.TabGroup);
