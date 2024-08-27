@@ -90,8 +90,15 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         UIAxes3_3                       matlab.ui.control.UIAxes
         UIAxes3_2                       matlab.ui.control.UIAxes
         UIAxes3                         matlab.ui.control.UIAxes
-        SegmenterPreAlphaTab            matlab.ui.container.Tab
-        VisualAnalyzeButton             matlab.ui.control.Button
+        SegmenterBetaTab                matlab.ui.container.Tab
+        CircularityEditField            matlab.ui.control.NumericEditField
+        CircularityEditFieldLabel       matlab.ui.control.Label
+        AreaEditField                   matlab.ui.control.NumericEditField
+        AreaEditFieldLabel              matlab.ui.control.Label
+        RegionStatisticsButton          matlab.ui.control.Button
+        DropPointButton                 matlab.ui.control.Button
+        AddPointButton                  matlab.ui.control.Button
+        SegmenterStateField             matlab.ui.control.EditField
         SegmentROIButton                matlab.ui.control.Button
         SegmentButton                   matlab.ui.control.Button
         SegmenterSlider                 matlab.ui.control.Slider
@@ -176,16 +183,23 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         segmenterZ;
         segmenterBW;
         segmenterMasked;
-        segmentROI;
+        % segmentROI;
         segmentIm;
         segroi;
         tempax;
         analyzeFigure;
         contrastLowLimit=0;
-        contrastUpLimit=4;
+        contrastUpLimit=2.5;
         contrastValue;
         brightnessValue=0;
         viewAdjustedImage;
+        samBox;
+        samObj;
+        samMasks;
+        samScores;
+        imgEmbeddings;
+        forePoints;
+        backPoints;
     end
     
 
@@ -669,8 +683,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             delete(findall(app.UIAxes,'Type','images.roi'));
             app.combmask = zeros(app.M,app.N);
             app.combmask = double(app.combmask);
-            while(app.MultiRoiSwitch.Value == "On")
-           
+            while true
+            if app.MultiRoiSwitch.Value == "On"
             if app.ROIStyleDropDown.Value == "Rectangle"
                 app.roi = drawrectangle('Parent',app.UIAxes);
                 mask = createMask(app.roi);
@@ -696,8 +710,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
                 app.combmask = imadd(app.combmask,double(mask));
             end
-
+            else
+                    pause(.0001)
+                    break
             end
+            end
+            
             app.combmask = imbinarize(app.combmask);
             imshow(app.combmask);
             for i = 0:1:length(app.bvals)-1
@@ -758,93 +776,46 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.SegmenterSlider.MajorTickLabels = string(0:1);
                 app.SegmenterSlider.MinorTicks = [];
             end
-
+            app.samObj = segmentAnythingModel;
+            
             app.DicomState.Value = "Images Loaded";
               catch
                   app.DicomState.Value = "Error Occured";
               end
         end
 
-        % Value changed function: SegmenterSlider
-        function SegmenterSliderValueChanged(app, event)
-             value = round(app.SegmenterSlider.Value);
-            
-            imagesc(app.UIAxes9,app.segmenterVol(:,:,value));
-            
-            xlim(app.UIAxes9,[0 ,app.segmenterN]);
-            ylim(app.UIAxes9,[0, app.segmenterM]);
-            
-        end
-
         % Button pushed function: SegmentButton
         function SegmentButtonPushed(app, event)
-            app.segmentIm = app.segmentROI;
-            s = rng;
-            rng('default');
-            L = imsegkmeans(single(app.segmentIm),2,'NumAttempts',2);
-            rng(s);
-            app.segmenterBW = L == 2;
-            app.segmenterBW = imcomplement(app.segmenterBW);
-            iterations = 150;
-            app.segmenterBW = activecontour(app.segmentIm, app.segmenterBW, iterations, 'edge');
-
-
-            app.segmenterBW = imfill(app.segmenterBW, 'holes');
-
-
-            radius = 2;
-            decomposition = 0;
-            se = strel('disk', radius, decomposition);
-            app.segmenterBW = imdilate(app.segmenterBW, se);
-
-
-            iterations = 150;
-            app.segmenterBW = activecontour(app.segmentIm, app.segmenterBW, iterations, 'Chan-Vese');
-
-
-            
-            cc = bwconncomp(app.segmenterBW);
-            rp = regionprops(cc,'Area');
-            areas = cell2mat(struct2cell(rp));
-            app.segmenterBW = bwareaopen(app.segmenterBW,max(areas)-100);
-            app.segmenterMasked = app.segmentIm;
-            app.segmenterMasked(~app.segmenterBW) = 0;
-            imagesc(app.UIAxes9_2,app.segmenterMasked);
+            app.segmentIm = app.segmenterVol(:,:,round(app.SegmenterSlider.Value));
+            app.SegmenterStateField.Value = "Embeddings are Creating";
+            pause(0.5);
+            app.imgEmbeddings = extractEmbeddings(app.samObj,app.segmenterVol(:,:,round(app.SegmenterSlider.Value)));
+            app.SegmenterStateField.Value = "Embeddings Created";
+            pause(0.5);
+            app.SegmenterStateField.Value = "Creating Masks";
+            pause(0.5);
+            if ~isnan(app.samBox)
+            [app.samMasks, app.samScores] = segmentObjectsFromEmbeddings(app.samObj, app.imgEmbeddings, size(app.segmentIm), BoundingBox = app.samBox);
+            else
+            [app.samMasks, app.samScores] = segmentObjectsFromEmbeddings(app.samObj, app.imgEmbeddings, size(app.segmentIm), ForegroundPoints = app.forePoints,BackgroundPoints = app.backPoints);
+            end
+            app.SegmenterStateField.Value = "Masks Created";
+            % app.segmenterMasked(~app.segmenterBW) = 0;
+            imagesc(app.UIAxes9_2,labeloverlay(imadjust(app.segmentIm),app.samMasks));
             colormap(app.UIAxes9_2,'gray');
+            title(app.UIAxes9_2,["Score" + num2str(app.samScores)]);
         end
 
         % Button pushed function: SegmentROIButton
         function SegmentROIButtonPushed(app, event)
             delete(findall(app.UIAxes9,'Type','images.roi'));
             delete(app.tempax);
-            app.segroi = drawfreehand('Parent',app.UIAxes9);
-            app.segmentROI = imadjust(app.segmenterVol(:,:,round(app.SegmenterSlider.Value)));
-            segMask = createMask(app.segroi);
-            app.segmentROI(~segMask) = 0;
+            app.segroi = drawrectangle('Parent',app.UIAxes9);
             
-        end
-
-        % Button pushed function: VisualAnalyzeButton
-        function VisualAnalyzeButtonPushed(app, event)
-            app.analyzeFigure = clf();
-            ax1 = axes(app.analyzeFigure);
-            app.tempax = copyobj(ax1,app.analyzeFigure);
-            ax2 = copyobj(ax1,app.analyzeFigure);
-            imagesc(ax1,imadjust(app.segmenterVol(:,:,round(app.SegmenterSlider.Value))));
-            contour(app.tempax,app.segmenterBW,[1 1],'LineWidth',3);
-            contourf(ax2,app.segmenterBW,'FaceAlpha',0.2);
-            colormap(ax1,'gray');
-            colormap(app.tempax,"jet");
-            colormap(ax2,'jet');
             
-            app.tempax.UserData = linkprop([ax1,app.tempax],...
-    {'Position','InnerPosition','DataAspectRatio','xtick','ytick', ...
-    'ydir','xdir','xlim','ylim'});
-                  ax2.UserData = linkprop([ax1,ax2],...
-    {'Position','InnerPosition','DataAspectRatio','xtick','ytick', ...
-    'ydir','xdir','xlim','ylim'});
-            app.tempax.Visible = "off";
-            ax2.Visible = "off";
+            
+            app.samBox = app.segroi.Position;
+            
             
         end
 
@@ -874,6 +845,39 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.brightnessValue = event.Value*(2^16);
             app.viewAdjustedImage = imadjust(app.viewVol(:,:,round(app.ViewSlider.Value)),[app.contrastLowLimit/255, app.contrastUpLimit/255],[])
             imagesc(app.UIAxes8,app.viewAdjustedImage+app.brightnessValue);
+            
+        end
+
+        % Button pushed function: AddPointButton
+        function AddPointButtonPushed(app, event)
+            tempAddPoint = drawpoint('Parent',app.UIAxes9,Color = 'green');
+            app.forePoints = vertcat(app.forePoints,tempAddPoint.Position);
+
+        end
+
+        % Button pushed function: DropPointButton
+        function DropPointButtonPushed(app, event)
+            tempDropPoint = drawpoint('Parent',app.UIAxes9,Color = 'red');
+            app.backPoints = vertcat(app.backPoints,tempDropPoint.Position);
+        end
+
+        % Button pushed function: RegionStatisticsButton
+        function RegionStatisticsButtonPushed(app, event)
+            stats = regionprops(app.samMasks,'Area','Circularity');
+            app.AreaEditField.Value = stats.Area;
+          
+            app.CircularityEditField.Value = stats.Circularity;
+        end
+
+        % Value changing function: SegmenterSlider
+        function SegmenterSliderValueChanging(app, event)
+            value = round(event.Value);
+            imagesc(app.UIAxes9,app.segmenterVol(:,:,value));
+            
+            xlim(app.UIAxes9,[0 ,app.segmenterN]);
+            ylim(app.UIAxes9,[0, app.segmenterM]);
+            app.forePoints =[];
+            app.backPoints =[];
             
         end
     end
@@ -1307,7 +1311,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.ContrastSlider.Orientation = 'vertical';
             app.ContrastSlider.ValueChangingFcn = createCallbackFcn(app, @ContrastSliderValueChanging, true);
             app.ContrastSlider.Position = [1480 152 3 569];
-            app.ContrastSlider.Value = [0 1];
+            app.ContrastSlider.Value = [0 2.5];
 
             % Create BritghtnessSliderLabel
             app.BritghtnessSliderLabel = uilabel(app.ImageViewPanel_2);
@@ -1398,12 +1402,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.ColorMapsDropDown.ValueChangedFcn = createCallbackFcn(app, @ColorMapsDropDownValueChanged, true);
             app.ColorMapsDropDown.Position = [1409 22 100 22];
 
-            % Create SegmenterPreAlphaTab
-            app.SegmenterPreAlphaTab = uitab(app.TabGroup);
-            app.SegmenterPreAlphaTab.Title = 'Segmenter(PreAlpha)';
+            % Create SegmenterBetaTab
+            app.SegmenterBetaTab = uitab(app.TabGroup);
+            app.SegmenterBetaTab.Title = 'Segmenter(Beta)';
 
             % Create UIAxes9
-            app.UIAxes9 = uiaxes(app.SegmenterPreAlphaTab);
+            app.UIAxes9 = uiaxes(app.SegmenterBetaTab);
             title(app.UIAxes9, 'Title')
             xlabel(app.UIAxes9, 'X')
             ylabel(app.UIAxes9, 'Y')
@@ -1411,7 +1415,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.UIAxes9.Position = [36 165 689 633];
 
             % Create UIAxes9_2
-            app.UIAxes9_2 = uiaxes(app.SegmenterPreAlphaTab);
+            app.UIAxes9_2 = uiaxes(app.SegmenterBetaTab);
             title(app.UIAxes9_2, 'Title')
             xlabel(app.UIAxes9_2, 'X')
             ylabel(app.UIAxes9_2, 'Y')
@@ -1419,33 +1423,71 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.UIAxes9_2.Position = [818 165 689 633];
 
             % Create SegmenterSliderLabel
-            app.SegmenterSliderLabel = uilabel(app.SegmenterPreAlphaTab);
+            app.SegmenterSliderLabel = uilabel(app.SegmenterBetaTab);
             app.SegmenterSliderLabel.HorizontalAlignment = 'right';
             app.SegmenterSliderLabel.Position = [37 88 98 22];
             app.SegmenterSliderLabel.Text = 'Segmenter Slider';
 
             % Create SegmenterSlider
-            app.SegmenterSlider = uislider(app.SegmenterPreAlphaTab);
-            app.SegmenterSlider.ValueChangedFcn = createCallbackFcn(app, @SegmenterSliderValueChanged, true);
+            app.SegmenterSlider = uislider(app.SegmenterBetaTab);
+            app.SegmenterSlider.ValueChangingFcn = createCallbackFcn(app, @SegmenterSliderValueChanging, true);
             app.SegmenterSlider.Position = [156 97 557 3];
 
             % Create SegmentButton
-            app.SegmentButton = uibutton(app.SegmenterPreAlphaTab, 'push');
+            app.SegmentButton = uibutton(app.SegmenterBetaTab, 'push');
             app.SegmentButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentButtonPushed, true);
             app.SegmentButton.Position = [734 73 103 35];
             app.SegmentButton.Text = 'Segment';
 
             % Create SegmentROIButton
-            app.SegmentROIButton = uibutton(app.SegmenterPreAlphaTab, 'push');
+            app.SegmentROIButton = uibutton(app.SegmenterBetaTab, 'push');
             app.SegmentROIButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentROIButtonPushed, true);
             app.SegmentROIButton.Position = [737 22 100 23];
             app.SegmentROIButton.Text = 'Segment ROI';
 
-            % Create VisualAnalyzeButton
-            app.VisualAnalyzeButton = uibutton(app.SegmenterPreAlphaTab, 'push');
-            app.VisualAnalyzeButton.ButtonPushedFcn = createCallbackFcn(app, @VisualAnalyzeButtonPushed, true);
-            app.VisualAnalyzeButton.Position = [737 116 98 23];
-            app.VisualAnalyzeButton.Text = 'Visual Analyze';
+            % Create SegmenterStateField
+            app.SegmenterStateField = uieditfield(app.SegmenterBetaTab, 'text');
+            app.SegmenterStateField.Position = [15 9 469 27];
+
+            % Create AddPointButton
+            app.AddPointButton = uibutton(app.SegmenterBetaTab, 'push');
+            app.AddPointButton.ButtonPushedFcn = createCallbackFcn(app, @AddPointButtonPushed, true);
+            app.AddPointButton.BackgroundColor = [0.3922 0.8314 0.0745];
+            app.AddPointButton.Position = [734 773 82 23];
+            app.AddPointButton.Text = 'Add Point';
+
+            % Create DropPointButton
+            app.DropPointButton = uibutton(app.SegmenterBetaTab, 'push');
+            app.DropPointButton.ButtonPushedFcn = createCallbackFcn(app, @DropPointButtonPushed, true);
+            app.DropPointButton.BackgroundColor = [1 0 0];
+            app.DropPointButton.Position = [734 743 82 23];
+            app.DropPointButton.Text = 'Drop Point';
+
+            % Create RegionStatisticsButton
+            app.RegionStatisticsButton = uibutton(app.SegmenterBetaTab, 'push');
+            app.RegionStatisticsButton.ButtonPushedFcn = createCallbackFcn(app, @RegionStatisticsButtonPushed, true);
+            app.RegionStatisticsButton.Position = [857 77 145 31];
+            app.RegionStatisticsButton.Text = 'Region Statistics';
+
+            % Create AreaEditFieldLabel
+            app.AreaEditFieldLabel = uilabel(app.SegmenterBetaTab);
+            app.AreaEditFieldLabel.HorizontalAlignment = 'right';
+            app.AreaEditFieldLabel.Position = [1129 86 30 22];
+            app.AreaEditFieldLabel.Text = 'Area';
+
+            % Create AreaEditField
+            app.AreaEditField = uieditfield(app.SegmenterBetaTab, 'numeric');
+            app.AreaEditField.Position = [1174 86 100 22];
+
+            % Create CircularityEditFieldLabel
+            app.CircularityEditFieldLabel = uilabel(app.SegmenterBetaTab);
+            app.CircularityEditFieldLabel.HorizontalAlignment = 'right';
+            app.CircularityEditFieldLabel.Position = [1102 52 58 22];
+            app.CircularityEditFieldLabel.Text = 'Circularity';
+
+            % Create CircularityEditField
+            app.CircularityEditField = uieditfield(app.SegmenterBetaTab, 'numeric');
+            app.CircularityEditField.Position = [1175 52 100 22];
 
             % Show the figure after all components are created
             app.DiffusonCalculatorforSIEMENSUIFigure.Visible = 'on';
