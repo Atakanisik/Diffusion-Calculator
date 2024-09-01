@@ -200,6 +200,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         imgEmbeddings;
         forePoints;
         backPoints;
+        selectedTab;
     end
     
 
@@ -833,8 +834,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         function ViewSliderValueChanging(app, event)
             app.viewSlidervalue = round(event.Value);
             app.InstanceNumberEditField.Value = app.viewSlidervalue;
-            
-            imagesc(app.UIAxes8,imadjust(app.viewVol(:,:,app.viewSlidervalue)));
+            viewImage = imadjust(app.viewVol(:,:,app.viewSlidervalue),[app.contrastLowLimit/255, app.contrastUpLimit/255],[]);
+            imagesc(app.UIAxes8,viewImage + app.brightnessValue);
             colormap(app.UIAxes8,app.ColormapDropDown.Value);
             xlim(app.UIAxes8,[0 ,app.viewN]);
             ylim(app.UIAxes8,[0, app.viewM]);
@@ -878,6 +879,36 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             ylim(app.UIAxes9,[0, app.segmenterM]);
             app.forePoints =[];
             app.backPoints =[];
+            app.samBox = [];
+            
+        end
+
+        % Window scroll wheel function: 
+        % DiffusonCalculatorforSIEMENSUIFigure
+        function DiffusonCalculatorforSIEMENSUIFigureWindowScrollWheel(app, event)
+            if app.selectedTab.Title == "Viewer"
+            verticalScrollCount = event.VerticalScrollCount;
+            scrollvalue = round(app.ViewSlider.Value) + verticalScrollCount;
+            
+            
+            if scrollvalue < 1
+                scrollvalue = 1
+            elseif scrollvalue > app.ViewSlider.Limits(2)
+                    scrollvalue = app.ViewSlider.Limits(2)
+            end
+            app.ViewSlider.Value = scrollvalue;
+            app.InstanceNumberEditField.Value = scrollvalue;
+            scrollImage = imadjust(app.viewVol(:,:,scrollvalue),[app.contrastLowLimit/255, app.contrastUpLimit/255],[]);
+            imagesc(app.UIAxes8,scrollImage + app.brightnessValue);
+            colormap(app.UIAxes8,app.ColormapDropDown.Value);
+            xlim(app.UIAxes8,[0 ,app.viewN]);
+            ylim(app.UIAxes8,[0, app.viewM]);
+            end
+        end
+
+        % Selection change function: TabGroup
+        function TabGroupSelectionChanged(app, event)
+            app.selectedTab = app.TabGroup.SelectedTab;
             
         end
     end
@@ -892,9 +923,11 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.DiffusonCalculatorforSIEMENSUIFigure = uifigure('Visible', 'off');
             app.DiffusonCalculatorforSIEMENSUIFigure.Position = [100 100 1600 900];
             app.DiffusonCalculatorforSIEMENSUIFigure.Name = 'Diffuson Calculator for SIEMENS';
+            app.DiffusonCalculatorforSIEMENSUIFigure.WindowScrollWheelFcn = createCallbackFcn(app, @DiffusonCalculatorforSIEMENSUIFigureWindowScrollWheel, true);
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.DiffusonCalculatorforSIEMENSUIFigure);
+            app.TabGroup.SelectionChangedFcn = createCallbackFcn(app, @TabGroupSelectionChanged, true);
             app.TabGroup.Position = [34 25 1546 850];
 
             % Create CalculatorTab
