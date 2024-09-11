@@ -2,7 +2,7 @@
 Diffusion Calculator is for Calculation IVIM and ADC parameters from DWI-MRI images espacially for SIEMENS vendor DICOM tags.
 
 Loading DICOM Series:
--Use Load DICOM button on bottom right in Calculator TAB for importing DICOM series. You can import multiple DICOM series at once. When Loading is finished you can see gdicom installedh warning on bottom left.
+-Use Load DICOM button on bottom right in Calculator TAB for importing DICOM series. You can import multiple DICOM series at once. When Loading is finished you can see dicom installed warning on bottom left.
 
 
 
@@ -47,6 +47,6 @@ Also Application include BOLD(R2*) Processor for recalculate R2* images from mul
 You can use Viewer for all sequences.
 
  if you use this prototype application please refer me as:
-Research Assistant Atakan I??k
+Research Assistant Atakan Işık
 Baskent University Biomedical Engineering Department.
 --ORC-ID:0000-0001-5433-4442
