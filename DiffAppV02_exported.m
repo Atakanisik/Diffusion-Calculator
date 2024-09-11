@@ -59,6 +59,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         PatientsListBox                 matlab.ui.control.ListBox
         PatientsListBoxLabel            matlab.ui.control.Label
         SequencesPanel                  matlab.ui.container.Panel
+        LoadtoBOLDPcsButton             matlab.ui.control.Button
         LoadToSegmenterButton           matlab.ui.control.Button
         FramesEditField                 matlab.ui.control.NumericEditField
         FramesEditFieldLabel            matlab.ui.control.Label
@@ -105,6 +106,23 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         SegmenterSliderLabel            matlab.ui.control.Label
         UIAxes9_2                       matlab.ui.control.UIAxes
         UIAxes9                         matlab.ui.control.UIAxes
+        BOLD_Proceesor                  matlab.ui.container.Tab
+        DrawROIforFitButton             matlab.ui.control.StateButton
+        BoldState                       matlab.ui.control.EditField
+        GenerateR2MapButton             matlab.ui.control.Button
+        BoldSliceKnob                   matlab.ui.control.DiscreteKnob
+        BoldSliceLabel                  matlab.ui.control.Label
+        TEKnob                          matlab.ui.control.DiscreteKnob
+        TEKnobLabel                     matlab.ui.control.Label
+        R2MapandFittingPanel            matlab.ui.container.Panel
+        MeanR2S1EditField               matlab.ui.control.NumericEditField
+        MeanR2S1EditFieldLabel          matlab.ui.control.Label
+        MeanOxyEditField                matlab.ui.control.NumericEditField
+        MeanOxyEditFieldLabel           matlab.ui.control.Label
+        UIAxes12                        matlab.ui.control.UIAxes
+        UIAxes11                        matlab.ui.control.UIAxes
+        R2ImagesPanel                   matlab.ui.container.Panel
+        UIAxes10                        matlab.ui.control.UIAxes
     end
 
     
@@ -192,6 +210,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         contrastUpLimit=2.5;
         contrastValue;
         brightnessValue=0;
+        viewImage;
         viewAdjustedImage;
         samBox;
         samObj;
@@ -201,7 +220,19 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         forePoints;
         backPoints;
         selectedTab;
-        
+        boldVol;
+        TEvals;
+        showTEval = 0
+        boldInstace = 0;
+        boldSlice = 1;
+        R2star;
+        boldmask;
+        boldfittype;
+        boldopts;
+        bM;
+        bN;
+        bZ;
+      
     end
     
 
@@ -640,6 +671,11 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             end
             app.ViewSlider.Value = 1;
             app.InstanceNumberEditField.Value = app.ViewSlider.Value;
+            app.brightnessValue = 0;
+            app.contrastLowLimit = 0;
+            app.contrastUpLimit = 5;
+            app.BritghtnessSlider.Value = 0;
+            app.ContrastSlider.Value = [0 5];
             app.DicomState.Value = "Images Loaded";
               catch
                   app.DicomState.Value = "Error Occured";
@@ -835,8 +871,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         function ViewSliderValueChanging(app, event)
             app.viewSlidervalue = round(event.Value);
             app.InstanceNumberEditField.Value = app.viewSlidervalue;
-            viewImage = imadjust(app.viewVol(:,:,app.viewSlidervalue),[app.contrastLowLimit/255, app.contrastUpLimit/255],[]);
-            imagesc(app.UIAxes8,viewImage + app.brightnessValue);
+            app.viewImage = imadjust(app.viewVol(:,:,app.viewSlidervalue),[app.contrastLowLimit/255, app.contrastUpLimit/255],[]);
+            imagesc(app.UIAxes8,app.viewImage + app.brightnessValue);
             colormap(app.UIAxes8,app.ColormapDropDown.Value);
             xlim(app.UIAxes8,[0 ,app.viewN]);
             ylim(app.UIAxes8,[0, app.viewM]);
@@ -912,6 +948,147 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.selectedTab = app.TabGroup.SelectedTab;
             
         end
+
+        % Value changed function: mapRoiSwitch
+        function mapRoiSwitchValueChanged(app, event)
+            value = app.mapRoiSwitch.Value;
+            
+            if value == "MultiROI"
+                app.GenerateMapsButton.BackgroundColor = [ 0.48,0.54,0.78];
+            else
+                app.GenerateMapsButton.BackgroundColor = [0.96,0.96,0.96];
+            end
+        end
+
+        % Button pushed function: LoadtoBOLDPcsButton
+        function LoadtoBOLDPcsButtonPushed(app, event)
+            app.patienttable = app.collection(find(app.collection.PatientName == app.patientvalue),1:end);
+            I = find(app.patienttable.SeriesDescription == app.sequencevalue);
+            % candidate = convertStringsToChars(descriptions(I));
+            I = I(find(I == app.SequencesListBox.Value));
+            % if candidate(1) == 'e'
+                fileNames = app.patienttable.Filenames(I);
+                app.frames = app.collection.Frames;
+            % end
+            
+       
+             app.rows = app.patienttable.Rows(I);
+            app.cols = app.patienttable.Columns(I);
+            app.boldVol = zeros(app.rows , app.cols);
+            fileNames = fileNames{1,1};
+            TEmatrix = [];
+            for i = 1:1:length(fileNames)
+                f = fileNames(i);
+                info = dicominfo(f);
+                TE = info.EchoTime;
+                
+                TEmatrix = horzcat(TEmatrix,TE);
+                svol = dicomread(f);
+                app.boldVol = cat(3,app.boldVol,svol);
+
+            
+            end
+            app.TEvals = unique(TEmatrix);
+            app.boldVol = app.boldVol(:,:,2:end);
+            [app.bM, app.bN, app.bZ] = size(app.boldVol);
+            disp(app.Z)
+            disp(app.TEvals)
+            app.boldInstace = app.bZ/length(app.TEvals);
+
+            app.TEKnob.Items = string(app.TEvals);
+            app.TEKnob.ItemsData = app.TEvals;
+            app.BoldSliceKnob.Items = string(1:app.boldInstace);
+            app.BoldSliceKnob.ItemsData = (1:app.boldInstace);
+            imagesc(app.UIAxes10,imadjust(app.boldVol(:,:,1+(app.showTEval*app.boldInstace))));
+            colormap(app.UIAxes10,"gray");
+            title(app.UIAxes,'IMAGE');
+            xlim(app.UIAxes10,[0,app.bM]);
+            ylim(app.UIAxes10,[0,app.bN]);
+
+
+        end
+
+        % Value changed function: TEKnob
+        function TEKnobValueChanged(app, event)
+            app.showTEval = find(app.TEvals == app.TEKnob.Value);
+            imagesc(app.UIAxes10,imadjust(app.boldVol(:,:,(app.showTEval)+((app.boldSlice-1)*length(app.TEvals)))));
+            colormap(app.UIAxes10,"gray");
+            xlim(app.UIAxes10,[0,app.bM]);
+            ylim(app.UIAxes10,[0,app.bN]);
+            
+        end
+
+        % Value changed function: BoldSliceKnob
+        function BoldSliceKnobValueChanged(app, event)
+            app.boldSlice = app.BoldSliceKnob.Value;
+            app.showTEval = find(app.TEvals == app.TEKnob.Value);
+            imagesc(app.UIAxes10,imadjust(app.boldVol(:,:,(app.showTEval)+((app.boldSlice-1)*length(app.TEvals)))));
+            colormap(app.UIAxes10,"gray");
+            xlim(app.UIAxes10,[0,app.bM]);
+            ylim(app.UIAxes10,[0,app.bN]);
+        end
+
+        % Button pushed function: GenerateR2MapButton
+        function GenerateR2MapButtonPushed(app, event)
+            
+            z = app.Z;
+            app.R2star = zeros(app.M,app.N);
+            [Xmask,Ymask] = size(app.boldmask);
+            app.BoldState.Value = "Proccesing";
+            pause(0.5)
+            for k = 1:1:Xmask
+                for j = 1:1:Ymask
+                    boldmatrix = [0];
+                    if app.boldmask(k,j) ~=0 
+                    for m = 0:1:length(app.TEvals)-1
+                        
+                            boldpixel = app.boldVol(k,j,(m+1)+((app.boldSlice-1)*length(app.TEvals)));
+                            boldmatrix = horzcat(boldmatrix,boldpixel);
+                        
+                    end
+                    boldmatrix = boldmatrix(2:end);
+                    boldmatrix = boldmatrix./boldmatrix(1);
+                    boldfit = fit(app.TEvals.',boldmatrix.',app.boldfittype,app.boldopts);
+                    
+                    app.R2star(k,j) = boldfit.b*1000;
+                    else
+                        app.R2star(k,j) = 0;
+                    end
+                end
+            end
+            meanoxy = mean(app.R2star(find(app.R2star ~=0)));
+            meanoxy =(1000-meanoxy)/10;
+            app.MeanOxyEditField.Value = meanoxy;
+            app.BoldState.Value = "Done";
+            imagesc(app.UIAxes11,app.R2star);
+            colormap(app.UIAxes11,'jet');
+            colorbar(app.UIAxes11);
+            xlim(app.UIAxes11,[0,app.bM]);
+            ylim(app.UIAxes11,[0,app.bN]);
+            
+        end
+
+        % Value changed function: DrawROIforFitButton
+        function DrawROIforFitButtonValueChanged(app, event)
+            delete(findall(app.UIAxes10,'Type','images.roi'));
+            boldroi = drawassisted(findobj(app.UIAxes10,'Type','Image'));
+            app.boldmask = createMask(boldroi);
+            app.boldfittype = fittype( 'exp(-b*x)', 'independent', 'x', 'dependent', 'y' );
+            app.boldopts =fitoptions( 'Method', 'NonlinearLeastSquares','Algorithm','Levenberg-Marquardt');
+            app.boldopts.Display = 'Off';
+            app.boldopts.StartPoint = 1;
+            boldFitsig = [0];
+            for i=1:1:length(app.TEvals)
+                fittempvol = app.boldVol(:,:,i+((app.boldSlice-1)*length(app.TEvals)));
+                fitBoldMean = mean(fittempvol(app.boldmask));
+                boldFitsig =horzcat(boldFitsig,fitBoldMean);
+            end
+            boldFitsig = boldFitsig(2:end);
+            boldFitsig = boldFitsig./boldFitsig(1);
+            roifit = fit(app.TEvals.',boldFitsig.',app.boldfittype,app.boldopts);
+            app.MeanR2S1EditField.Value = roifit.b;
+            plot(app.UIAxes12,roifit,app.TEvals,boldFitsig);
+        end
     end
 
     % Component initialization
@@ -919,6 +1096,9 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
         % Create UIFigure and components
         function createComponents(app)
+
+            % Get the file path for locating images
+            pathToMLAPP = fileparts(mfilename('fullpath'));
 
             % Create DiffusonCalculatorforSIEMENSUIFigure and hide until all components are created
             app.DiffusonCalculatorforSIEMENSUIFigure = uifigure('Visible', 'off');
@@ -1027,7 +1207,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create CalculateButton
             app.CalculateButton = uibutton(app.OptionsPanel, 'push');
             app.CalculateButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateButtonPushed, true);
-            app.CalculateButton.Position = [425 8 83 23];
+            app.CalculateButton.Icon = fullfile(pathToMLAPP, 'icons', 'calculate.png');
+            app.CalculateButton.Position = [414 -4 98 35];
             app.CalculateButton.Text = 'Calculate';
 
             % Create ROIStyleDropDownLabel
@@ -1045,13 +1226,15 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create DrawROIButton
             app.DrawROIButton = uibutton(app.OptionsPanel, 'state');
             app.DrawROIButton.ValueChangedFcn = createCallbackFcn(app, @DrawROIButtonValueChanged, true);
+            app.DrawROIButton.Icon = fullfile(pathToMLAPP, 'icons', 'draw.png');
             app.DrawROIButton.Text = 'DrawROI';
-            app.DrawROIButton.Position = [436 43 64 24];
+            app.DrawROIButton.Position = [420 43 94 35];
 
             % Create DrawMultipleROIButton
             app.DrawMultipleROIButton = uibutton(app.OptionsPanel, 'push');
             app.DrawMultipleROIButton.ButtonPushedFcn = createCallbackFcn(app, @DrawMultipleROIButtonPushed, true);
-            app.DrawMultipleROIButton.Position = [264 43 158 23];
+            app.DrawMultipleROIButton.Icon = fullfile(pathToMLAPP, 'icons', 'multidraw.png');
+            app.DrawMultipleROIButton.Position = [256 42 158 35];
             app.DrawMultipleROIButton.Text = 'Draw Multiple ROI';
 
             % Create MultiRoiSwitch
@@ -1061,7 +1244,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create LoadDICOMButton
             app.LoadDICOMButton = uibutton(app.CalculatorTab, 'push');
             app.LoadDICOMButton.ButtonPushedFcn = createCallbackFcn(app, @LoadDICOMButtonPushed, true);
-            app.LoadDICOMButton.Position = [1439 15 85 23];
+            app.LoadDICOMButton.Icon = fullfile(pathToMLAPP, 'icons', 'import.png');
+            app.LoadDICOMButton.Position = [1394 15 140 38];
             app.LoadDICOMButton.Text = 'Load DICOM';
 
             % Create AlgorithmButtonGroup
@@ -1098,7 +1282,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create GenerateMapsButton
             app.GenerateMapsButton = uibutton(app.CalculatorTab, 'push');
             app.GenerateMapsButton.ButtonPushedFcn = createCallbackFcn(app, @GenerateMapsButtonPushed, true);
-            app.GenerateMapsButton.Position = [988 77 151 23];
+            app.GenerateMapsButton.Icon = fullfile(pathToMLAPP, 'icons', 'generate.png');
+            app.GenerateMapsButton.Position = [979 57 160 51];
             app.GenerateMapsButton.Text = 'Generate Maps';
 
             % Create BValueKnobLabel
@@ -1173,13 +1358,15 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create FilterDWIBetaButton
             app.FilterDWIBetaButton = uibutton(app.CalculatorTab, 'push');
             app.FilterDWIBetaButton.ButtonPushedFcn = createCallbackFcn(app, @FilterDWIBetaButtonPushed, true);
-            app.FilterDWIBetaButton.Position = [1430 93 104 23];
+            app.FilterDWIBetaButton.Icon = fullfile(pathToMLAPP, 'icons', 'filter.png');
+            app.FilterDWIBetaButton.Position = [1394 73 140 43];
             app.FilterDWIBetaButton.Text = 'Filter DWI (Beta)';
 
             % Create mapRoiSwitch
             app.mapRoiSwitch = uiswitch(app.CalculatorTab, 'slider');
             app.mapRoiSwitch.Items = {'SingleROI', 'MultiROI'};
-            app.mapRoiSwitch.Position = [1041 46 45 20];
+            app.mapRoiSwitch.ValueChangedFcn = createCallbackFcn(app, @mapRoiSwitchValueChanged, true);
+            app.mapRoiSwitch.Position = [1041 30 45 20];
             app.mapRoiSwitch.Value = 'SingleROI';
 
             % Create DpUpperLimitSegEditFieldLabel
@@ -1237,12 +1424,14 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create LoadtoCalculatorButton
             app.LoadtoCalculatorButton = uibutton(app.SequencesPanel, 'push');
             app.LoadtoCalculatorButton.ButtonPushedFcn = createCallbackFcn(app, @LoadtoCalculatorButtonPushed, true);
-            app.LoadtoCalculatorButton.Position = [1357 25 120 26];
+            app.LoadtoCalculatorButton.Icon = fullfile(pathToMLAPP, 'icons', 'send.png');
+            app.LoadtoCalculatorButton.Position = [1345 25 138 26];
             app.LoadtoCalculatorButton.Text = 'Load to Calculator';
 
             % Create LoadtoViewerButton
             app.LoadtoViewerButton = uibutton(app.SequencesPanel, 'push');
             app.LoadtoViewerButton.ButtonPushedFcn = createCallbackFcn(app, @LoadtoViewerButtonPushed, true);
+            app.LoadtoViewerButton.Icon = fullfile(pathToMLAPP, 'icons', 'send.png');
             app.LoadtoViewerButton.Position = [1357 111 120 26];
             app.LoadtoViewerButton.Text = 'Load to Viewer';
 
@@ -1259,8 +1448,16 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create LoadToSegmenterButton
             app.LoadToSegmenterButton = uibutton(app.SequencesPanel, 'push');
             app.LoadToSegmenterButton.ButtonPushedFcn = createCallbackFcn(app, @LoadToSegmenterButtonPushed, true);
-            app.LoadToSegmenterButton.Position = [1357 66 120 26];
+            app.LoadToSegmenterButton.Icon = fullfile(pathToMLAPP, 'icons', 'send.png');
+            app.LoadToSegmenterButton.Position = [1345 66 138 26];
             app.LoadToSegmenterButton.Text = 'Load To Segmenter';
+
+            % Create LoadtoBOLDPcsButton
+            app.LoadtoBOLDPcsButton = uibutton(app.SequencesPanel, 'push');
+            app.LoadtoBOLDPcsButton.ButtonPushedFcn = createCallbackFcn(app, @LoadtoBOLDPcsButtonPushed, true);
+            app.LoadtoBOLDPcsButton.Icon = fullfile(pathToMLAPP, 'icons', 'send.png');
+            app.LoadtoBOLDPcsButton.Position = [1344 144 149 24];
+            app.LoadtoBOLDPcsButton.Text = 'Load to BOLD Pcs.';
 
             % Create PatientsPanel
             app.PatientsPanel = uipanel(app.DicomTab);
@@ -1470,13 +1667,15 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create SegmentButton
             app.SegmentButton = uibutton(app.SegmenterBetaTab, 'push');
             app.SegmentButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentButtonPushed, true);
-            app.SegmentButton.Position = [734 73 103 35];
+            app.SegmentButton.Icon = fullfile(pathToMLAPP, 'icons', 'segment.png');
+            app.SegmentButton.Position = [734 73 124 35];
             app.SegmentButton.Text = 'Segment';
 
             % Create SegmentROIButton
             app.SegmentROIButton = uibutton(app.SegmenterBetaTab, 'push');
             app.SegmentROIButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentROIButtonPushed, true);
-            app.SegmentROIButton.Position = [737 22 100 23];
+            app.SegmentROIButton.Icon = fullfile(pathToMLAPP, 'icons', 'draw.png');
+            app.SegmentROIButton.Position = [737 22 121 36];
             app.SegmentROIButton.Text = 'Segment ROI';
 
             % Create SegmenterStateField
@@ -1500,7 +1699,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create RegionStatisticsButton
             app.RegionStatisticsButton = uibutton(app.SegmenterBetaTab, 'push');
             app.RegionStatisticsButton.ButtonPushedFcn = createCallbackFcn(app, @RegionStatisticsButtonPushed, true);
-            app.RegionStatisticsButton.Position = [857 77 145 31];
+            app.RegionStatisticsButton.Icon = fullfile(pathToMLAPP, 'icons', 'stats.png');
+            app.RegionStatisticsButton.Position = [912 77 154 31];
             app.RegionStatisticsButton.Text = 'Region Statistics';
 
             % Create AreaEditFieldLabel
@@ -1522,6 +1722,102 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % Create CircularityEditField
             app.CircularityEditField = uieditfield(app.SegmenterBetaTab, 'numeric');
             app.CircularityEditField.Position = [1175 52 100 22];
+
+            % Create BOLD_Proceesor
+            app.BOLD_Proceesor = uitab(app.TabGroup);
+            app.BOLD_Proceesor.Title = 'BOLD Processor';
+
+            % Create R2ImagesPanel
+            app.R2ImagesPanel = uipanel(app.BOLD_Proceesor);
+            app.R2ImagesPanel.Title = 'R2*Images';
+            app.R2ImagesPanel.Position = [36 308 626 493];
+
+            % Create UIAxes10
+            app.UIAxes10 = uiaxes(app.R2ImagesPanel);
+            title(app.UIAxes10, 'Title')
+            xlabel(app.UIAxes10, 'X')
+            ylabel(app.UIAxes10, 'Y')
+            zlabel(app.UIAxes10, 'Z')
+            app.UIAxes10.Position = [6 18 607 453];
+
+            % Create R2MapandFittingPanel
+            app.R2MapandFittingPanel = uipanel(app.BOLD_Proceesor);
+            app.R2MapandFittingPanel.Title = 'R2* Map and Fitting';
+            app.R2MapandFittingPanel.Position = [703 23 779 778];
+
+            % Create UIAxes11
+            app.UIAxes11 = uiaxes(app.R2MapandFittingPanel);
+            title(app.UIAxes11, 'Title')
+            xlabel(app.UIAxes11, 'X')
+            ylabel(app.UIAxes11, 'Y')
+            zlabel(app.UIAxes11, 'Z')
+            app.UIAxes11.Position = [20 229 734 512];
+
+            % Create UIAxes12
+            app.UIAxes12 = uiaxes(app.R2MapandFittingPanel);
+            title(app.UIAxes12, 'Title')
+            xlabel(app.UIAxes12, 'X')
+            ylabel(app.UIAxes12, 'Y')
+            zlabel(app.UIAxes12, 'Z')
+            app.UIAxes12.Position = [268 23 280 201];
+
+            % Create MeanOxyEditFieldLabel
+            app.MeanOxyEditFieldLabel = uilabel(app.R2MapandFittingPanel);
+            app.MeanOxyEditFieldLabel.HorizontalAlignment = 'right';
+            app.MeanOxyEditFieldLabel.Position = [28 152 62 22];
+            app.MeanOxyEditFieldLabel.Text = 'Mean Oxy.';
+
+            % Create MeanOxyEditField
+            app.MeanOxyEditField = uieditfield(app.R2MapandFittingPanel, 'numeric');
+            app.MeanOxyEditField.Position = [105 147 136 32];
+
+            % Create MeanR2S1EditFieldLabel
+            app.MeanR2S1EditFieldLabel = uilabel(app.R2MapandFittingPanel);
+            app.MeanR2S1EditFieldLabel.HorizontalAlignment = 'right';
+            app.MeanR2S1EditFieldLabel.Position = [554 13 105 22];
+            app.MeanR2S1EditFieldLabel.Text = 'Mean R2*(S^-1)';
+
+            % Create MeanR2S1EditField
+            app.MeanR2S1EditField = uieditfield(app.R2MapandFittingPanel, 'numeric');
+            app.MeanR2S1EditField.Position = [668 13 99 22];
+
+            % Create TEKnobLabel
+            app.TEKnobLabel = uilabel(app.BOLD_Proceesor);
+            app.TEKnobLabel.HorizontalAlignment = 'center';
+            app.TEKnobLabel.Position = [180 88 25 22];
+            app.TEKnobLabel.Text = 'TE';
+
+            % Create TEKnob
+            app.TEKnob = uiknob(app.BOLD_Proceesor, 'discrete');
+            app.TEKnob.ValueChangedFcn = createCallbackFcn(app, @TEKnobValueChanged, true);
+            app.TEKnob.Position = [141 124 104 104];
+
+            % Create BoldSliceLabel
+            app.BoldSliceLabel = uilabel(app.BOLD_Proceesor);
+            app.BoldSliceLabel.HorizontalAlignment = 'center';
+            app.BoldSliceLabel.Position = [424 93 58 22];
+            app.BoldSliceLabel.Text = 'Bold Slice';
+
+            % Create BoldSliceKnob
+            app.BoldSliceKnob = uiknob(app.BOLD_Proceesor, 'discrete');
+            app.BoldSliceKnob.ValueChangedFcn = createCallbackFcn(app, @BoldSliceKnobValueChanged, true);
+            app.BoldSliceKnob.Position = [401 130 101 101];
+
+            % Create GenerateR2MapButton
+            app.GenerateR2MapButton = uibutton(app.BOLD_Proceesor, 'push');
+            app.GenerateR2MapButton.ButtonPushedFcn = createCallbackFcn(app, @GenerateR2MapButtonPushed, true);
+            app.GenerateR2MapButton.Position = [574 170 115 23];
+            app.GenerateR2MapButton.Text = 'Generate R2* Map';
+
+            % Create BoldState
+            app.BoldState = uieditfield(app.BOLD_Proceesor, 'text');
+            app.BoldState.Position = [20 15 355 26];
+
+            % Create DrawROIforFitButton
+            app.DrawROIforFitButton = uibutton(app.BOLD_Proceesor, 'state');
+            app.DrawROIforFitButton.ValueChangedFcn = createCallbackFcn(app, @DrawROIforFitButtonValueChanged, true);
+            app.DrawROIforFitButton.Text = 'Draw ROI for Fit';
+            app.DrawROIforFitButton.Position = [581 127 102 23];
 
             % Show the figure after all components are created
             app.DiffusonCalculatorforSIEMENSUIFigure.Visible = 'on';
