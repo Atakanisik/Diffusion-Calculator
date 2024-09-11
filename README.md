@@ -4,6 +4,7 @@ Diffusion Calculator is for Calculation IVIM and ADC parameters from DWI-MRI ima
 Loading DICOM Series:
 -Use Load DICOM button on bottom right in Calculator TAB for importing DICOM series. You can import multiple DICOM series at once. When Loading is finished you can see dicom installed warning on bottom left.
 
+![resim](https://github.com/user-attachments/assets/d949f216-53fa-42ec-bfab-ee2330303f83)
 
 
 
