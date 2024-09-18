@@ -117,8 +117,6 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         R2MapandFittingPanel            matlab.ui.container.Panel
         MeanR2S1EditField               matlab.ui.control.NumericEditField
         MeanR2S1EditFieldLabel          matlab.ui.control.Label
-        MeanOxyEditField                matlab.ui.control.NumericEditField
-        MeanOxyEditFieldLabel           matlab.ui.control.Label
         UIAxes12                        matlab.ui.control.UIAxes
         UIAxes11                        matlab.ui.control.UIAxes
         R2ImagesPanel                   matlab.ui.container.Panel
@@ -168,6 +166,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         Dpmap;
         pFmap;
         fo;
+        fotype;
+        segfo;
         fo2;
         foadc;
         mymodel;
@@ -232,6 +232,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         bM;
         bN;
         bZ;
+        OEFvol
       
     end
     
@@ -326,17 +327,18 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             % try
             app.bvals_ivim = app.bvals(find(app.bvals<=1000));
             app.s_s0_ivim = app.s_s0(1:length(app.bvals_ivim));
-
-            app.fo =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt');
-            app.fo2 = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',app.bvals(1));
-            app.foadc =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',app.bvals(1));
+            app.fotype = fittype('f * exp(-b * D_star) + (1 - f) * exp(-b * D)','independent', 'b', 'coefficients', {'f', 'D_star', 'D'});
+            app.segfo = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt');
+            app.fo =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.1,0.01,0.001],'Lower',[0,0,0],'Upper',[1,0.1,0.005]);
+            app.fo2 = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.01],'Lower',[0],'Upper',[0.1]);
+            app.foadc =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.001]);
             app.adctype =fittype( 'exp(-b*x)', 'independent', 'x', 'dependent', 'y' );
             [app.adcfit, gadc] = fit(app.bvals_ivim.',app.s_s0_ivim.',app.adctype,app.foadc);
-            [app.freeFit, gfree] = fit(app.bvals_ivim.',app.s_s0_ivim.','exp2',app.fo);
-            app.paramFree = [app.freeFit.b*-1 app.freeFit.d*-1 app.freeFit.a];
+            [app.freeFit, gfree] = fit(app.bvals_ivim.',app.s_s0_ivim.',app.fotype,app.fo);
+            app.paramFree = [app.freeFit.D app.freeFit.D_star app.freeFit.f];
             app.bvalHigh = app.bvals_ivim(find(app.bvals_ivim > 200));
             app.sigDataHigh = app.s_s0_ivim(find(app.bvals_ivim > 200));
-            app.segFitHigh = fit(app.bvalHigh.',app.sigDataHigh.','exp1',app.fo);
+            app.segFitHigh = fit(app.bvalHigh.',app.sigDataHigh.','exp1',app.segfo);
             dt = app.segFitHigh.b*-1;
             si = app.segFitHigh.a * app.s_s0_ivim(1);
             pf = (app.s_s0(1)-si)/app.s_s0_ivim(1);
@@ -363,8 +365,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.rsqr = gfree.rsquare;
                 app.RSquareEditField.Value = app.rsqr;
                 app.ADCEditField.Value = 0;
-                app.DpEditField.Value = app.paramFree(1);
-                app.DtEditField.Value = app.paramFree(2);
+                app.DpEditField.Value = app.paramFree(2);
+                app.DtEditField.Value = app.paramFree(1);
                 app.pFEditField.Value = app.paramFree(3);
                 app.DtUpperLimitFreeEditField.Value = app.DtEditField.Value*2;
                 app.DpUpperLimitFreeEditField.Value = app.DpEditField.Value*2;
@@ -428,10 +430,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.StateField.BackgroundColor = [0.95,0.84,0.18];
                 pause(0.5);
                 try
-                app.fo =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt');
-                app.fo2 = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',app.bvals(1));
-                app.foadc =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',app.bvals(1));
-                app.adctype =fittype( 'exp(-b*x)', 'independent', 'x', 'dependent', 'y' )
+                app.fotype = fittype('f * exp(-b * D_star) + (1 - f) * exp(-b * D)','independent', 'b', 'coefficients', {'f', 'D_star', 'D'});
+                app.segfo = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt');
+                app.fo =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.1,0.01,0.001],'Lower',[0,0,0],'Upper',[1,0.1,0.005]);
+                app.fo2 = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.01],'Lower',[0],'Upper',[0.1]);
+                app.foadc =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.001]);
+                app.adctype =fittype( 'exp(-b*x)', 'independent', 'x', 'dependent', 'y' );
                 if app.mapRoiSwitch.Value == "SingleROI"
                         app.mapMask = uint16(createMask(app.roi));
                 elseif app.mapRoiSwitch.Value == "MultiROI"
@@ -458,25 +462,34 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                         pixelBvalHigh = app.b_map_ivim(find(app.b_map_ivim>200));
                         pixelBvals = app.b_map_ivim;
                     
-                        
+                        try
                         pixelSigMatrixHigh = pixelSigMatrix(find(app.b_map_ivim > 200));
                         pixelADCfit = fit(pixelBvals.',pixelSigMatrix.',app.adctype,app.foadc);
-                        pixelFreefit = fit(pixelBvals.',pixelSigMatrix','exp2',app.fo);
-                        pixelsegFitHigh = fit(pixelBvalHigh.',pixelSigMatrixHigh.','exp1',app.fo);
+                        pixelFreefit = fit(pixelBvals.',pixelSigMatrix',app.fotype,app.fo);
+                        pixelsegFitHigh = fit(pixelBvalHigh.',pixelSigMatrixHigh.','exp1',app.segfo);
                         DT = pixelsegFitHigh.b*-1;
                         SI = pixelsegFitHigh.a * pixelSigMatrix(1);
                         PF = (pixelSigMatrix(1)-SI)/pixelSigMatrix(1);
                         pixelmodel = @(DP,x) (PF*(exp(-x*DP)) + (1-PF)*exp(-x*DT));
                         pixelSegAllFit = fit(pixelBvals.',pixelSigMatrix.',pixelmodel,app.fo2);
                         DP = pixelSegAllFit.DP;
-                        pixelParamFree = [pixelFreefit.b*-1 pixelFreefit.d*-1 pixelFreefit.a];
+                        pixelParamFree = [pixelFreefit.D pixelFreefit.D_star pixelFreefit.f];
                         app.ADCmap(xc,yc) = pixelADCfit.b;
-                        app.Dpmap(xc,yc) = pixelParamFree(1);
-                        app.Dtmap(xc,yc) = pixelParamFree(2);
+                        app.Dpmap(xc,yc) = pixelParamFree(2);
+                        app.Dtmap(xc,yc) = pixelParamFree(1);
                         app.pFmap(xc,yc) = pixelParamFree(3);
                         app.DpSegmap(xc,yc) =DP;
                         app.DtSegmap(xc,yc) = DT;
                         app.pFSegmap(xc,yc) = PF;
+                        catch
+                        app.ADCmap(xc,yc) = 0;
+                        app.Dpmap(xc,yc) = 0;
+                        app.Dtmap(xc,yc) = 0;
+                        app.pFmap(xc,yc) = 0;
+                        app.DpSegmap(xc,yc) =0;
+                        app.DtSegmap(xc,yc) = 0;
+                        app.pFSegmap(xc,yc) = 0;
+                        end
                     else
                         app.ADCmap(xc,yc) = 0;
                         app.Dpmap(xc,yc) = 0;
@@ -539,6 +552,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
                     app.StateField.Value = "Map Calculation is Done";
                     app.StateField.BackgroundColor = [0.29,0.84,0.16];
+                    
                 catch
                     app.StateField.Value = "Maps Could Not be Generated, Try Changing Kernel Size";
                 end
@@ -1046,26 +1060,31 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                             boldmatrix = horzcat(boldmatrix,boldpixel);
                         
                     end
+                    try
                     boldmatrix = boldmatrix(2:end);
                     boldmatrix = boldmatrix./boldmatrix(1);
                     boldfit = fit(app.TEvals.',boldmatrix.',app.boldfittype,app.boldopts);
                     
                     app.R2star(k,j) = boldfit.b*1000;
+                    catch
+                        app.R2star(k,j) = 0;
+                    end
                     else
                         app.R2star(k,j) = 0;
                     end
                 end
             end
-            meanoxy = mean(app.R2star(find(app.R2star ~=0)));
-            meanoxy =(1000-meanoxy)/10;
-            app.MeanOxyEditField.Value = meanoxy;
+           
+            
+            
+            
             app.BoldState.Value = "Done";
-            imagesc(app.UIAxes11,app.R2star);
-            colormap(app.UIAxes11,'jet');
+            imagesc(app.UIAxes11,app.R2star,[0, max(app.R2star(:))]);
+            colormap(app.UIAxes11,'turbo');
             colorbar(app.UIAxes11);
             xlim(app.UIAxes11,[0,app.bM]);
             ylim(app.UIAxes11,[0,app.bN]);
-            
+            app.BoldState.Value = "Done";
         end
 
         % Value changed function: DrawROIforFitButton
@@ -1087,6 +1106,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             boldFitsig = boldFitsig./boldFitsig(1);
             roifit = fit(app.TEvals.',boldFitsig.',app.boldfittype,app.boldopts);
             app.MeanR2S1EditField.Value = roifit.b;
+           
             plot(app.UIAxes12,roifit,app.TEvals,boldFitsig);
         end
     end
@@ -1760,16 +1780,6 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             ylabel(app.UIAxes12, 'Y')
             zlabel(app.UIAxes12, 'Z')
             app.UIAxes12.Position = [268 23 280 201];
-
-            % Create MeanOxyEditFieldLabel
-            app.MeanOxyEditFieldLabel = uilabel(app.R2MapandFittingPanel);
-            app.MeanOxyEditFieldLabel.HorizontalAlignment = 'right';
-            app.MeanOxyEditFieldLabel.Position = [28 152 62 22];
-            app.MeanOxyEditFieldLabel.Text = 'Mean Oxy.';
-
-            % Create MeanOxyEditField
-            app.MeanOxyEditField = uieditfield(app.R2MapandFittingPanel, 'numeric');
-            app.MeanOxyEditField.Position = [105 147 136 32];
 
             % Create MeanR2S1EditFieldLabel
             app.MeanR2S1EditFieldLabel = uilabel(app.R2MapandFittingPanel);
