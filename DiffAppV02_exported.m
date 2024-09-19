@@ -3,124 +3,120 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         DiffusonCalculatorforSIEMENSUIFigure  matlab.ui.Figure
-        TabGroup                        matlab.ui.container.TabGroup
-        CalculatorTab                   matlab.ui.container.Tab
-        SmoothingDegreeEditField        matlab.ui.control.NumericEditField
-        SmoothingDegreeEditFieldLabel   matlab.ui.control.Label
-        DtUpperLimitSegEditField        matlab.ui.control.NumericEditField
-        DtUpperLimitSegEditFieldLabel   matlab.ui.control.Label
-        DpUpperLimitSegEditField        matlab.ui.control.NumericEditField
-        DpUpperLimitSegEditFieldLabel   matlab.ui.control.Label
-        mapRoiSwitch                    matlab.ui.control.Switch
-        FilterDWIBetaButton             matlab.ui.control.Button
-        StateField                      matlab.ui.control.EditField
-        DtUpperLimitFreeEditField       matlab.ui.control.NumericEditField
-        DtUpperLimitFreeEditFieldLabel  matlab.ui.control.Label
-        DpUpperLimitFreeEditField       matlab.ui.control.NumericEditField
-        DpUpperLimitFreeEditFieldLabel  matlab.ui.control.Label
-        KernelSizeEditField             matlab.ui.control.NumericEditField
-        KernelSizeEditFieldLabel        matlab.ui.control.Label
-        SliceKnob                       matlab.ui.control.DiscreteKnob
-        SliceKnobLabel                  matlab.ui.control.Label
-        BValueKnob                      matlab.ui.control.DiscreteKnob
-        BValueKnobLabel                 matlab.ui.control.Label
-        GenerateMapsButton              matlab.ui.control.Button
-        EditField_2                     matlab.ui.control.NumericEditField
-        EditField                       matlab.ui.control.NumericEditField
-        AlgorithmButtonGroup            matlab.ui.container.ButtonGroup
-        BiExpSegButton                  matlab.ui.control.RadioButton
-        BiexpFreeButton                 matlab.ui.control.RadioButton
-        MonoExpButton                   matlab.ui.control.RadioButton
-        LoadDICOMButton                 matlab.ui.control.Button
-        OptionsPanel                    matlab.ui.container.Panel
-        MultiRoiSwitch                  matlab.ui.control.Switch
-        DrawMultipleROIButton           matlab.ui.control.Button
-        DrawROIButton                   matlab.ui.control.StateButton
-        ROIStyleDropDown                matlab.ui.control.DropDown
-        ROIStyleDropDownLabel           matlab.ui.control.Label
-        CalculateButton                 matlab.ui.control.Button
-        ADCEditField                    matlab.ui.control.NumericEditField
-        ADCEditFieldLabel               matlab.ui.control.Label
-        pFEditField                     matlab.ui.control.NumericEditField
-        pFEditFieldLabel                matlab.ui.control.Label
-        DpEditField                     matlab.ui.control.NumericEditField
-        DpEditFieldLabel                matlab.ui.control.Label
-        DtEditField                     matlab.ui.control.NumericEditField
-        DtEditFieldLabel                matlab.ui.control.Label
-        ImageViewPanel                  matlab.ui.container.Panel
-        UIAxes                          matlab.ui.control.UIAxes
-        FittingGraphicsPanel            matlab.ui.container.Panel
-        RSquareEditField                matlab.ui.control.NumericEditField
-        RSquareEditFieldLabel           matlab.ui.control.Label
-        UIAxes2                         matlab.ui.control.UIAxes
-        DicomTab                        matlab.ui.container.Tab
-        DicomState                      matlab.ui.control.EditField
-        PatientsPanel                   matlab.ui.container.Panel
-        PatientsListBox                 matlab.ui.control.ListBox
-        PatientsListBoxLabel            matlab.ui.control.Label
-        SequencesPanel                  matlab.ui.container.Panel
-        LoadtoBOLDPcsButton             matlab.ui.control.Button
-        LoadToSegmenterButton           matlab.ui.control.Button
-        FramesEditField                 matlab.ui.control.NumericEditField
-        FramesEditFieldLabel            matlab.ui.control.Label
-        LoadtoViewerButton              matlab.ui.control.Button
-        LoadtoCalculatorButton          matlab.ui.control.Button
-        SequencesListBox                matlab.ui.control.ListBox
-        SequencesListBoxLabel           matlab.ui.control.Label
-        ViewerTab                       matlab.ui.container.Tab
-        ImageViewPanel_2                matlab.ui.container.Panel
-        BritghtnessSlider               matlab.ui.control.Slider
-        BritghtnessSliderLabel          matlab.ui.control.Label
-        ContrastSlider                  matlab.ui.control.RangeSlider
-        ContrastSliderLabel             matlab.ui.control.Label
-        ColormapDropDown                matlab.ui.control.DropDown
-        ColormapDropDownLabel           matlab.ui.control.Label
-        InstanceNumberEditField         matlab.ui.control.NumericEditField
-        InstanceNumberEditFieldLabel    matlab.ui.control.Label
-        ViewSlider                      matlab.ui.control.Slider
-        ViewSliderLabel                 matlab.ui.control.Label
-        UIAxes8                         matlab.ui.control.UIAxes
-        MapsTab                         matlab.ui.container.Tab
-        DWIMAPSPanel                    matlab.ui.container.Panel
-        ColorMapsDropDown               matlab.ui.control.DropDown
-        ColorMapsDropDownLabel          matlab.ui.control.Label
-        UIAxes3_7                       matlab.ui.control.UIAxes
-        UIAxes3_6                       matlab.ui.control.UIAxes
-        UIAxes3_5                       matlab.ui.control.UIAxes
-        UIAxes3_4                       matlab.ui.control.UIAxes
-        UIAxes3_3                       matlab.ui.control.UIAxes
-        UIAxes3_2                       matlab.ui.control.UIAxes
-        UIAxes3                         matlab.ui.control.UIAxes
-        SegmenterBetaTab                matlab.ui.container.Tab
-        CircularityEditField            matlab.ui.control.NumericEditField
-        CircularityEditFieldLabel       matlab.ui.control.Label
-        AreaEditField                   matlab.ui.control.NumericEditField
-        AreaEditFieldLabel              matlab.ui.control.Label
-        RegionStatisticsButton          matlab.ui.control.Button
-        DropPointButton                 matlab.ui.control.Button
-        AddPointButton                  matlab.ui.control.Button
-        SegmenterStateField             matlab.ui.control.EditField
-        SegmentROIButton                matlab.ui.control.Button
-        SegmentButton                   matlab.ui.control.Button
-        SegmenterSlider                 matlab.ui.control.Slider
-        SegmenterSliderLabel            matlab.ui.control.Label
-        UIAxes9_2                       matlab.ui.control.UIAxes
-        UIAxes9                         matlab.ui.control.UIAxes
-        BOLD_Proceesor                  matlab.ui.container.Tab
-        DrawROIforFitButton             matlab.ui.control.StateButton
-        BoldState                       matlab.ui.control.EditField
-        GenerateR2MapButton             matlab.ui.control.Button
-        BoldSliceKnob                   matlab.ui.control.DiscreteKnob
-        BoldSliceLabel                  matlab.ui.control.Label
-        TEKnob                          matlab.ui.control.DiscreteKnob
-        TEKnobLabel                     matlab.ui.control.Label
-        R2MapandFittingPanel            matlab.ui.container.Panel
-        MeanR2S1EditField               matlab.ui.control.NumericEditField
-        MeanR2S1EditFieldLabel          matlab.ui.control.Label
-        UIAxes12                        matlab.ui.control.UIAxes
-        UIAxes11                        matlab.ui.control.UIAxes
-        R2ImagesPanel                   matlab.ui.container.Panel
-        UIAxes10                        matlab.ui.control.UIAxes
+        TabGroup                       matlab.ui.container.TabGroup
+        CalculatorTab                  matlab.ui.container.Tab
+        SmoothingDegreeEditField       matlab.ui.control.NumericEditField
+        SmoothingDegreeEditFieldLabel  matlab.ui.control.Label
+        mapRoiSwitch                   matlab.ui.control.Switch
+        FilterDWIBetaButton            matlab.ui.control.Button
+        StateField                     matlab.ui.control.EditField
+        KernelSizeEditField            matlab.ui.control.NumericEditField
+        KernelSizeEditFieldLabel       matlab.ui.control.Label
+        SliceKnob                      matlab.ui.control.DiscreteKnob
+        SliceKnobLabel                 matlab.ui.control.Label
+        BValueKnob                     matlab.ui.control.DiscreteKnob
+        BValueKnobLabel                matlab.ui.control.Label
+        GenerateMapsButton             matlab.ui.control.Button
+        EditField_2                    matlab.ui.control.NumericEditField
+        EditField                      matlab.ui.control.NumericEditField
+        AlgorithmButtonGroup           matlab.ui.container.ButtonGroup
+        BayesianButton                 matlab.ui.control.RadioButton
+        BiExpSegButton                 matlab.ui.control.RadioButton
+        BiexpFreeButton                matlab.ui.control.RadioButton
+        MonoExpButton                  matlab.ui.control.RadioButton
+        LoadDICOMButton                matlab.ui.control.Button
+        OptionsPanel                   matlab.ui.container.Panel
+        MultiRoiSwitch                 matlab.ui.control.Switch
+        DrawMultipleROIButton          matlab.ui.control.Button
+        DrawROIButton                  matlab.ui.control.StateButton
+        ROIStyleDropDown               matlab.ui.control.DropDown
+        ROIStyleDropDownLabel          matlab.ui.control.Label
+        CalculateButton                matlab.ui.control.Button
+        ADCEditField                   matlab.ui.control.NumericEditField
+        ADCEditFieldLabel              matlab.ui.control.Label
+        pFEditField                    matlab.ui.control.NumericEditField
+        pFEditFieldLabel               matlab.ui.control.Label
+        DpEditField                    matlab.ui.control.NumericEditField
+        DpEditFieldLabel               matlab.ui.control.Label
+        DtEditField                    matlab.ui.control.NumericEditField
+        DtEditFieldLabel               matlab.ui.control.Label
+        ImageViewPanel                 matlab.ui.container.Panel
+        UIAxes                         matlab.ui.control.UIAxes
+        FittingGraphicsPanel           matlab.ui.container.Panel
+        RSquareEditField               matlab.ui.control.NumericEditField
+        RSquareEditFieldLabel          matlab.ui.control.Label
+        UIAxes2                        matlab.ui.control.UIAxes
+        DicomTab                       matlab.ui.container.Tab
+        DicomState                     matlab.ui.control.EditField
+        PatientsPanel                  matlab.ui.container.Panel
+        PatientsListBox                matlab.ui.control.ListBox
+        PatientsListBoxLabel           matlab.ui.control.Label
+        SequencesPanel                 matlab.ui.container.Panel
+        LoadtoBOLDPcsButton            matlab.ui.control.Button
+        LoadToSegmenterButton          matlab.ui.control.Button
+        FramesEditField                matlab.ui.control.NumericEditField
+        FramesEditFieldLabel           matlab.ui.control.Label
+        LoadtoViewerButton             matlab.ui.control.Button
+        LoadtoCalculatorButton         matlab.ui.control.Button
+        SequencesListBox               matlab.ui.control.ListBox
+        SequencesListBoxLabel          matlab.ui.control.Label
+        ViewerTab                      matlab.ui.container.Tab
+        ImageViewPanel_2               matlab.ui.container.Panel
+        BritghtnessSlider              matlab.ui.control.Slider
+        BritghtnessSliderLabel         matlab.ui.control.Label
+        ContrastSlider                 matlab.ui.control.RangeSlider
+        ContrastSliderLabel            matlab.ui.control.Label
+        ColormapDropDown               matlab.ui.control.DropDown
+        ColormapDropDownLabel          matlab.ui.control.Label
+        InstanceNumberEditField        matlab.ui.control.NumericEditField
+        InstanceNumberEditFieldLabel   matlab.ui.control.Label
+        ViewSlider                     matlab.ui.control.Slider
+        ViewSliderLabel                matlab.ui.control.Label
+        UIAxes8                        matlab.ui.control.UIAxes
+        MapsTab                        matlab.ui.container.Tab
+        DWIMAPSPanel                   matlab.ui.container.Panel
+        ColorMapsDropDown              matlab.ui.control.DropDown
+        ColorMapsDropDownLabel         matlab.ui.control.Label
+        UIAxes3_10                     matlab.ui.control.UIAxes
+        UIAxes3_9                      matlab.ui.control.UIAxes
+        UIAxes3_8                      matlab.ui.control.UIAxes
+        UIAxes3_7                      matlab.ui.control.UIAxes
+        UIAxes3_6                      matlab.ui.control.UIAxes
+        UIAxes3_5                      matlab.ui.control.UIAxes
+        UIAxes3_4                      matlab.ui.control.UIAxes
+        UIAxes3_3                      matlab.ui.control.UIAxes
+        UIAxes3_2                      matlab.ui.control.UIAxes
+        UIAxes3                        matlab.ui.control.UIAxes
+        SegmenterBetaTab               matlab.ui.container.Tab
+        CircularityEditField           matlab.ui.control.NumericEditField
+        CircularityEditFieldLabel      matlab.ui.control.Label
+        AreaEditField                  matlab.ui.control.NumericEditField
+        AreaEditFieldLabel             matlab.ui.control.Label
+        RegionStatisticsButton         matlab.ui.control.Button
+        DropPointButton                matlab.ui.control.Button
+        AddPointButton                 matlab.ui.control.Button
+        SegmenterStateField            matlab.ui.control.EditField
+        SegmentROIButton               matlab.ui.control.Button
+        SegmentButton                  matlab.ui.control.Button
+        SegmenterSlider                matlab.ui.control.Slider
+        SegmenterSliderLabel           matlab.ui.control.Label
+        UIAxes9_2                      matlab.ui.control.UIAxes
+        UIAxes9                        matlab.ui.control.UIAxes
+        BOLD_Proceesor                 matlab.ui.container.Tab
+        DrawROIforFitButton            matlab.ui.control.StateButton
+        BoldState                      matlab.ui.control.EditField
+        GenerateR2MapButton            matlab.ui.control.Button
+        BoldSliceKnob                  matlab.ui.control.DiscreteKnob
+        BoldSliceLabel                 matlab.ui.control.Label
+        TEKnob                         matlab.ui.control.DiscreteKnob
+        TEKnobLabel                    matlab.ui.control.Label
+        R2MapandFittingPanel           matlab.ui.container.Panel
+        MeanR2S1EditField              matlab.ui.control.NumericEditField
+        MeanR2S1EditFieldLabel         matlab.ui.control.Label
+        UIAxes12                       matlab.ui.control.UIAxes
+        UIAxes11                       matlab.ui.control.UIAxes
+        R2ImagesPanel                  matlab.ui.container.Panel
+        UIAxes10                       matlab.ui.control.UIAxes
     end
 
     
@@ -179,6 +175,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         DtUpperLimitfree = 0.005;
         DpUpperLimitseg = 0.05;
         DtUpperLimitseg = 0.005;
+        DpUpperLimitBayes = 0.05;
+        DtUpperLimitBayes = 0.005;
         bvals_ivim;
         s_s0_ivim;
         b_map_ivim;
@@ -232,8 +230,144 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         bM;
         bN;
         bZ;
-        OEFvol
+        OEFvol;
+        dPbayesMap;
+        dTbayesMap;
+        pFbayesMap;
+        DpMCMCmap;
+        DtMCMCmap;
+        PfMCMCmap;
       
+    end
+    
+    methods (Access = public)
+        
+        function [posterior_mean, posterior_std, chain,Rsquare,fitSignal] = bayesian(app,b_values, signal_data)
+
+    % Define the IVIM model
+
+    model_fun = @(params, b) params(1) * exp(-b * params(2)) + (1-params(1)) * exp(-b * params(3));
+
+
+    % Define the prior distributions for the parameters
+
+    prior_f = @(f) unifpdf(f, 0, 1); % uniform prior for perfusion fraction (f)
+
+    prior_Dstar = @(Dstar) unifpdf(Dstar, 0.01, 0.5); % lognormal prior for pseudo-diffusion coefficient (D*)
+
+    prior_D = @(D) unifpdf(D, 0.001, 0.5); % lognormal prior for true diffusion coefficient (D)
+
+
+    % Define the likelihood function
+
+    likelihood_fun = @(params, b, signal) prod(normpdf(signal, model_fun(params, b), 0.01));
+
+
+    % Define the Bayesian model
+
+    bayes_model = @(params) prior_f(params(1)) * prior_Dstar(params(2)) * prior_D(params(3)) * likelihood_fun(params, b_values, signal_data);
+
+
+    % Initialize the MCMC chain
+
+    n_samples = 1000;
+
+    params_init = [0.5 0.01 0.001]; % initial values for f, D*, and D
+
+    chain = zeros(n_samples, 3);
+
+
+    % Run the MCMC chain
+
+    for i = 1:n_samples
+
+        params_prop = params_init + randn(1, 3) .* [0.1 0.01 0.001]; % propose new parameters
+
+        params_prop(1) = max(0, min(1, params_prop(1))); % ensure f is between 0 and 1
+
+        params_prop(2) = max(0, params_prop(2)); % ensure D* is positive
+
+        params_prop(3) = max(0, params_prop(3)); % ensure D is positive
+
+        posterior_prop = bayes_model(params_prop);
+
+        posterior_init = bayes_model(params_init);
+
+        alpha = min(1, posterior_prop / posterior_init);
+
+        if rand < alpha
+
+            params_init = params_prop;
+
+        end
+
+        chain(i, :) = params_init;
+
+    end
+
+
+    % Compute the posterior means and standard deviations
+
+    posterior_mean = mean(chain, 1);
+
+    posterior_std = std(chain, 0, 1);
+
+
+    % Display the results
+
+    fprintf('Posterior mean (f, D*, D): [%f, %f, %f]\n', posterior_mean);
+
+    fprintf('Posterior standard deviation (f, D*, D): [%f, %f, %f]\n', posterior_std);
+
+
+    % Plot the fitted IVIM model and the data
+
+    fitSignal = model_fun(posterior_mean, b_values);
+    residual = signal_data - fitSignal;
+    S_res_ss = sum(residual.^2);
+
+    S_tot_ss = sum((signal_data - mean(signal_data)).^2);
+
+    Rsquare = 1 - (S_res_ss / S_tot_ss);
+
+    % plot(b_values, signal_data, 'o', b_values, fitSignal, '-','Parent',axes);
+    % figure;
+    % 
+    % subplot(1, 3, 1);
+    % 
+    % histogram(chain(:, 1), 20);
+    % 
+    % xlabel('Perfusion Fraction (f)');
+    % 
+    % ylabel('Frequency');
+    % 
+    % title('Posterior Distribution of f');
+    % 
+    % 
+    % subplot(1, 3, 2);
+    % 
+    % histogram(chain(:, 2), 20);
+    % 
+    % xlabel('Pseudo-Diffusion Coefficient (D*)');
+    % 
+    % ylabel('Frequency');
+    % 
+    % title('Posterior Distribution of D*');
+    % 
+    % 
+    % subplot(1, 3, 3);
+    % 
+    % histogram(chain(:, 3), 20);
+    % 
+    % xlabel('True Diffusion Coefficient (D)');
+    % 
+    % ylabel('Frequency');
+    % 
+    % title('Posterior Distribution of D');
+    % 
+        end
+        
+        
     end
     
 
@@ -262,8 +396,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             end
             
             
-
-
+           
 
             
 
@@ -368,8 +501,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.DpEditField.Value = app.paramFree(2);
                 app.DtEditField.Value = app.paramFree(1);
                 app.pFEditField.Value = app.paramFree(3);
-                app.DtUpperLimitFreeEditField.Value = app.DtEditField.Value*2;
-                app.DpUpperLimitFreeEditField.Value = app.DpEditField.Value*2;
+                app.DtUpperLimitfree = app.DtEditField.Value*2;
+                app.DpUpperLimitfree = app.DpEditField.Value*2;
                 plot(app.UIAxes2,app.freeFit,app.bvals_ivim,app.s_s0_ivim);
                 ylim(app.UIAxes2,[0 1]);
                 title(app.UIAxes2,'Fitting Graphic');
@@ -383,14 +516,33 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 app.DpEditField.Value = app.paramSeg(1);
                 app.DtEditField.Value = app.paramSeg(2);
                 app.pFEditField.Value = app.paramSeg(3);
-                app.DtUpperLimitSegEditField.Value = app.DtEditField.Value*2;
-                app.DpUpperLimitSegEditField.Value = app.DpEditField.Value*2;
+                app.DtUpperLimitseg = app.DtEditField.Value*2;
+                app.DpUpperLimitseg = app.DpEditField.Value*2;
                 plot(app.UIAxes2,app.segFitAll,app.bvals_ivim,app.s_s0_ivim);
                 ylim(app.UIAxes2,[0 1]);
                 title(app.UIAxes2,'Fitting Graphic');
                 xlabel(app.UIAxes2,'B-Value');
                 ylabel(app.UIAxes2,'S / S0');
             end
+            if (app.BayesianButton.Value == 1)
+                [p,l,c,rsqrb,fits] = bayesian(app,app.bvals_ivim,app.s_s0_ivim);
+                app.rsqr = rsqrb;
+                app.RSquareEditField.Value = app.rsqr;
+                app.ADCEditField.Value = 0;
+                app.DpEditField.Value = p(2);
+                app.DtEditField.Value = p(3);
+                app.pFEditField.Value = p(1);
+                app.DtUpperLimitBayes = app.DtEditField.Value*2;
+                app.DpUpperLimitBayes = app.DpEditField.Value*2;
+                plot(app.UIAxes2,app.bvals_ivim,app.s_s0_ivim,'o',app.bvals_ivim,fits,'-');
+                ylim(app.UIAxes2,[0 1]);
+                title(app.UIAxes2,'Fitting Graphic');
+                xlabel(app.UIAxes2,'B-Value');
+                ylabel(app.UIAxes2,'S / S0');
+            end
+            
+
+         
             
             % catch
             %     app.StateField.Value = "Error Occured";
@@ -444,7 +596,8 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                 [maskX, maskY] = size(app.mapMask);
                 
                 app.kernel = app.KernelSizeEditField.Value;
-            
+                
+                
             for xc = round(app.kernel/2)+1:1:maskX-app.kernel
                 for yc=round(app.kernel/2)+1:1:maskY-app.kernel
                     pixelSigMatrix = [0];
@@ -463,9 +616,26 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                         pixelBvals = app.b_map_ivim;
                     
                         try
-                        pixelSigMatrixHigh = pixelSigMatrix(find(app.b_map_ivim > 200));
+                        
                         pixelADCfit = fit(pixelBvals.',pixelSigMatrix.',app.adctype,app.foadc);
+                        app.ADCmap(xc,yc) = pixelADCfit.b;
+                        catch
+                            app.ADCmap(xc,yc) = 0;
+                        end
+                        try
                         pixelFreefit = fit(pixelBvals.',pixelSigMatrix',app.fotype,app.fo);
+                        pixelParamFree = [pixelFreefit.D pixelFreefit.D_star pixelFreefit.f];
+
+                        app.Dpmap(xc,yc) = pixelParamFree(2);
+                        app.Dtmap(xc,yc) = pixelParamFree(1);
+                        app.pFmap(xc,yc) = pixelParamFree(3);
+                        catch
+                        app.Dpmap(xc,yc) = 0;
+                        app.Dtmap(xc,yc) = 0;
+                        app.pFmap(xc,yc) = 0;
+                        end
+                        try
+                        pixelSigMatrixHigh = pixelSigMatrix(find(app.b_map_ivim > 200));
                         pixelsegFitHigh = fit(pixelBvalHigh.',pixelSigMatrixHigh.','exp1',app.segfo);
                         DT = pixelsegFitHigh.b*-1;
                         SI = pixelsegFitHigh.a * pixelSigMatrix(1);
@@ -473,22 +643,34 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                         pixelmodel = @(DP,x) (PF*(exp(-x*DP)) + (1-PF)*exp(-x*DT));
                         pixelSegAllFit = fit(pixelBvals.',pixelSigMatrix.',pixelmodel,app.fo2);
                         DP = pixelSegAllFit.DP;
-                        pixelParamFree = [pixelFreefit.D pixelFreefit.D_star pixelFreefit.f];
-                        app.ADCmap(xc,yc) = pixelADCfit.b;
-                        app.Dpmap(xc,yc) = pixelParamFree(2);
-                        app.Dtmap(xc,yc) = pixelParamFree(1);
-                        app.pFmap(xc,yc) = pixelParamFree(3);
                         app.DpSegmap(xc,yc) =DP;
                         app.DtSegmap(xc,yc) = DT;
                         app.pFSegmap(xc,yc) = PF;
                         catch
-                        app.ADCmap(xc,yc) = 0;
-                        app.Dpmap(xc,yc) = 0;
-                        app.Dtmap(xc,yc) = 0;
-                        app.pFmap(xc,yc) = 0;
+                        
                         app.DpSegmap(xc,yc) =0;
                         app.DtSegmap(xc,yc) = 0;
                         app.pFSegmap(xc,yc) = 0;
+                        end
+                        try
+                        [pmap,~,~,~,~] = bayesian(app,pixelBvals,pixelSigMatrix);
+                        
+    
+                       
+                        
+                       
+                        app.dPbayesMap(xc,yc) = pmap(2);
+                        app.dTbayesMap(xc,yc) = pmap(3);
+                        app.pFbayesMap(xc,yc) = pmap(1);
+                       
+                        catch
+                        
+                        
+                        
+                        app.dPbayesMap(xc,yc) = 0;
+                        app.dTbayesMap(xc,yc) = 0;
+                        app.pFbayesMap(xc,yc) = 0;
+                      
                         end
                     else
                         app.ADCmap(xc,yc) = 0;
@@ -498,14 +680,18 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                         app.DpSegmap(xc,yc) =0;
                         app.DtSegmap(xc,yc) = 0;
                         app.pFSegmap(xc,yc) = 0;
+                        app.dPbayesMap(xc,yc) = 0;
+                        app.dTbayesMap(xc,yc) = 0;
+                        app.pFbayesMap(xc,yc) = 0;
+                       
                     end
                     
                 end
             end
-                    app.DpUpperLimitfree = app.DpUpperLimitFreeEditField.Value;
-                    app.DtUpperLimitfree = app.DtUpperLimitFreeEditField.Value;
-                    app.DpUpperLimitseg = app.DpUpperLimitSegEditField.Value;
-                    app.DtUpperLimitseg = app.DtUpperLimitSegEditField.Value
+                    
+                    
+                    
+
                      
                      imagesc(app.UIAxes3_7,app.ADCmap);
                      colormap(app.UIAxes3_7,"jet");
@@ -549,13 +735,33 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
                      xlim(app.UIAxes3_6,[0 ,app.N]);
                      ylim(app.UIAxes3_6,[0, app.M]);
 
+                     imagesc(app.UIAxes3_8,app.dPbayesMap,[0,app.DpUpperLimitBayes]);
+                     colormap(app.UIAxes3_8,"jet");
+                     colorbar(app.UIAxes3_8);
+                     xlim(app.UIAxes3_8,[0 ,app.N]);
+                     ylim(app.UIAxes3_8,[0, app.M]);
+
+                     imagesc(app.UIAxes3_9,app.dTbayesMap,[0,app.DtUpperLimitBayes]);
+                     colormap(app.UIAxes3_9,"jet");
+                     colorbar(app.UIAxes3_9);
+                     xlim(app.UIAxes3_9,[0 ,app.N]);
+                     ylim(app.UIAxes3_9,[0, app.M]);
+
+                     imagesc(app.UIAxes3_10,app.pFbayesMap,[0,1]);
+                     colormap(app.UIAxes3_10,"jet");
+                     colorbar(app.UIAxes3_10);
+                     xlim(app.UIAxes3_10,[0 ,app.N]);
+                     ylim(app.UIAxes3_10,[0, app.M]);
+
+                    
+
 
                     app.StateField.Value = "Map Calculation is Done";
                     app.StateField.BackgroundColor = [0.29,0.84,0.16];
                     
-                catch
+                 catch
                     app.StateField.Value = "Maps Could Not be Generated, Try Changing Kernel Size";
-                end
+                 end
 
             
         end
@@ -616,10 +822,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             title(app.UIAxes,'IMAGE');
             xlim(app.UIAxes,[0 ,app.N]);
             ylim(app.UIAxes,[0, app.M]);
-            app.DtUpperLimitFreeEditField.Value = app.DtUpperLimitfree;
-            app.DpUpperLimitFreeEditField.Value = app.DpUpperLimitfree;
-            app.DtUpperLimitSegEditField.Value = app.DtUpperLimitseg;
-            app.DpUpperLimitSegEditField.Value = app.DpUpperLimitseg;
+            
             app.DicomState.Value = "Images Loaded";
             app.StateField.Value = "";
             catch
@@ -706,6 +909,9 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             colormap(app.UIAxes3_5,app.ColorMapsDropDown.Value);
             colormap(app.UIAxes3_6,app.ColorMapsDropDown.Value);
             colormap(app.UIAxes3_7,app.ColorMapsDropDown.Value);
+            colormap(app.UIAxes3_8,app.ColorMapsDropDown.Value);
+            colormap(app.UIAxes3_9,app.ColorMapsDropDown.Value);
+            colormap(app.UIAxes3_10,app.ColorMapsDropDown.Value);
             
         end
 
@@ -1273,23 +1479,28 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.AlgorithmButtonGroup.BorderType = 'none';
             app.AlgorithmButtonGroup.BorderWidth = 0;
             app.AlgorithmButtonGroup.Title = 'Algorithm';
-            app.AlgorithmButtonGroup.Position = [1021 169 100 110];
+            app.AlgorithmButtonGroup.Position = [1015 149 100 136];
 
             % Create MonoExpButton
             app.MonoExpButton = uiradiobutton(app.AlgorithmButtonGroup);
             app.MonoExpButton.Text = 'MonoExp';
-            app.MonoExpButton.Position = [8 66 73 22];
+            app.MonoExpButton.Position = [8 92 73 22];
             app.MonoExpButton.Value = true;
 
             % Create BiexpFreeButton
             app.BiexpFreeButton = uiradiobutton(app.AlgorithmButtonGroup);
             app.BiexpFreeButton.Text = 'BiexpFree';
-            app.BiexpFreeButton.Position = [8 45 77 22];
+            app.BiexpFreeButton.Position = [8 71 77 22];
 
             % Create BiExpSegButton
             app.BiExpSegButton = uiradiobutton(app.AlgorithmButtonGroup);
             app.BiExpSegButton.Text = 'BiExpSeg';
-            app.BiExpSegButton.Position = [8 22 75 22];
+            app.BiExpSegButton.Position = [8 48 75 22];
+
+            % Create BayesianButton
+            app.BayesianButton = uiradiobutton(app.AlgorithmButtonGroup);
+            app.BayesianButton.Text = 'Bayesian';
+            app.BayesianButton.Position = [7 26 71 22];
 
             % Create EditField
             app.EditField = uieditfield(app.CalculatorTab, 'numeric');
@@ -1347,28 +1558,6 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.KernelSizeEditField.Position = [1099 115 38 17];
             app.KernelSizeEditField.Value = 4;
 
-            % Create DpUpperLimitFreeEditFieldLabel
-            app.DpUpperLimitFreeEditFieldLabel = uilabel(app.CalculatorTab);
-            app.DpUpperLimitFreeEditFieldLabel.HorizontalAlignment = 'right';
-            app.DpUpperLimitFreeEditFieldLabel.Position = [1140 147 113 22];
-            app.DpUpperLimitFreeEditFieldLabel.Text = 'Dp Upper Limit Free';
-
-            % Create DpUpperLimitFreeEditField
-            app.DpUpperLimitFreeEditField = uieditfield(app.CalculatorTab, 'numeric');
-            app.DpUpperLimitFreeEditField.ValueDisplayFormat = '%.5f';
-            app.DpUpperLimitFreeEditField.Position = [1268 146 64 23];
-
-            % Create DtUpperLimitFreeEditFieldLabel
-            app.DtUpperLimitFreeEditFieldLabel = uilabel(app.CalculatorTab);
-            app.DtUpperLimitFreeEditFieldLabel.HorizontalAlignment = 'right';
-            app.DtUpperLimitFreeEditFieldLabel.Position = [1142 119 110 22];
-            app.DtUpperLimitFreeEditFieldLabel.Text = 'Dt Upper Limit Free';
-
-            % Create DtUpperLimitFreeEditField
-            app.DtUpperLimitFreeEditField = uieditfield(app.CalculatorTab, 'numeric');
-            app.DtUpperLimitFreeEditField.ValueDisplayFormat = '%.5f';
-            app.DtUpperLimitFreeEditField.Position = [1267 118 64 23];
-
             % Create StateField
             app.StateField = uieditfield(app.CalculatorTab, 'text');
             app.StateField.FontSize = 14;
@@ -1388,28 +1577,6 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.mapRoiSwitch.ValueChangedFcn = createCallbackFcn(app, @mapRoiSwitchValueChanged, true);
             app.mapRoiSwitch.Position = [1041 30 45 20];
             app.mapRoiSwitch.Value = 'SingleROI';
-
-            % Create DpUpperLimitSegEditFieldLabel
-            app.DpUpperLimitSegEditFieldLabel = uilabel(app.CalculatorTab);
-            app.DpUpperLimitSegEditFieldLabel.HorizontalAlignment = 'right';
-            app.DpUpperLimitSegEditFieldLabel.Position = [1142 89 113 22];
-            app.DpUpperLimitSegEditFieldLabel.Text = 'Dp Upper Limit Seg ';
-
-            % Create DpUpperLimitSegEditField
-            app.DpUpperLimitSegEditField = uieditfield(app.CalculatorTab, 'numeric');
-            app.DpUpperLimitSegEditField.ValueDisplayFormat = '%.5f';
-            app.DpUpperLimitSegEditField.Position = [1270 89 61 20];
-
-            % Create DtUpperLimitSegEditFieldLabel
-            app.DtUpperLimitSegEditFieldLabel = uilabel(app.CalculatorTab);
-            app.DtUpperLimitSegEditFieldLabel.HorizontalAlignment = 'right';
-            app.DtUpperLimitSegEditFieldLabel.Position = [1145 57 106 22];
-            app.DtUpperLimitSegEditFieldLabel.Text = 'DtUpper Limit Seg ';
-
-            % Create DtUpperLimitSegEditField
-            app.DtUpperLimitSegEditField = uieditfield(app.CalculatorTab, 'numeric');
-            app.DtUpperLimitSegEditField.ValueDisplayFormat = '%.5f';
-            app.DtUpperLimitSegEditField.Position = [1266 57 66 20];
 
             % Create SmoothingDegreeEditFieldLabel
             app.SmoothingDegreeEditFieldLabel = uilabel(app.CalculatorTab);
@@ -1592,7 +1759,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3, 'X')
             ylabel(app.UIAxes3, 'Y')
             zlabel(app.UIAxes3, 'Z')
-            app.UIAxes3.Position = [22 532 409 228];
+            app.UIAxes3.Position = [22 532 371 234];
 
             % Create UIAxes3_2
             app.UIAxes3_2 = uiaxes(app.DWIMAPSPanel);
@@ -1600,7 +1767,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_2, 'X')
             ylabel(app.UIAxes3_2, 'Y')
             zlabel(app.UIAxes3_2, 'Z')
-            app.UIAxes3_2.Position = [535 532 409 228];
+            app.UIAxes3_2.Position = [22 283 371 234];
 
             % Create UIAxes3_3
             app.UIAxes3_3 = uiaxes(app.DWIMAPSPanel);
@@ -1608,7 +1775,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_3, 'X')
             ylabel(app.UIAxes3_3, 'Y')
             zlabel(app.UIAxes3_3, 'Z')
-            app.UIAxes3_3.Position = [1055 533 409 228];
+            app.UIAxes3_3.Position = [22 29 371 234];
 
             % Create UIAxes3_4
             app.UIAxes3_4 = uiaxes(app.DWIMAPSPanel);
@@ -1616,7 +1783,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_4, 'X')
             ylabel(app.UIAxes3_4, 'Y')
             zlabel(app.UIAxes3_4, 'Z')
-            app.UIAxes3_4.Position = [22 271 409 228];
+            app.UIAxes3_4.Position = [431 532 371 234];
 
             % Create UIAxes3_5
             app.UIAxes3_5 = uiaxes(app.DWIMAPSPanel);
@@ -1624,7 +1791,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_5, 'X')
             ylabel(app.UIAxes3_5, 'Y')
             zlabel(app.UIAxes3_5, 'Z')
-            app.UIAxes3_5.Position = [535 270 409 228];
+            app.UIAxes3_5.Position = [431 283 371 234];
 
             % Create UIAxes3_6
             app.UIAxes3_6 = uiaxes(app.DWIMAPSPanel);
@@ -1632,7 +1799,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_6, 'X')
             ylabel(app.UIAxes3_6, 'Y')
             zlabel(app.UIAxes3_6, 'Z')
-            app.UIAxes3_6.Position = [1055 261 409 228];
+            app.UIAxes3_6.Position = [431 29 371 234];
 
             % Create UIAxes3_7
             app.UIAxes3_7 = uiaxes(app.DWIMAPSPanel);
@@ -1640,7 +1807,31 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             xlabel(app.UIAxes3_7, 'X')
             ylabel(app.UIAxes3_7, 'Y')
             zlabel(app.UIAxes3_7, 'Z')
-            app.UIAxes3_7.Position = [535 8 409 228];
+            app.UIAxes3_7.Position = [1220 283 293 250];
+
+            % Create UIAxes3_8
+            app.UIAxes3_8 = uiaxes(app.DWIMAPSPanel);
+            title(app.UIAxes3_8, 'DP Bayes Fit')
+            xlabel(app.UIAxes3_8, 'X')
+            ylabel(app.UIAxes3_8, 'Y')
+            zlabel(app.UIAxes3_8, 'Z')
+            app.UIAxes3_8.Position = [828 532 371 234];
+
+            % Create UIAxes3_9
+            app.UIAxes3_9 = uiaxes(app.DWIMAPSPanel);
+            title(app.UIAxes3_9, 'DT Bayes Fit')
+            xlabel(app.UIAxes3_9, 'X')
+            ylabel(app.UIAxes3_9, 'Y')
+            zlabel(app.UIAxes3_9, 'Z')
+            app.UIAxes3_9.Position = [828 283 371 234];
+
+            % Create UIAxes3_10
+            app.UIAxes3_10 = uiaxes(app.DWIMAPSPanel);
+            title(app.UIAxes3_10, 'pF Bayes Fit')
+            xlabel(app.UIAxes3_10, 'X')
+            ylabel(app.UIAxes3_10, 'Y')
+            zlabel(app.UIAxes3_10, 'Z')
+            app.UIAxes3_10.Position = [828 29 371 234];
 
             % Create ColorMapsDropDownLabel
             app.ColorMapsDropDownLabel = uilabel(app.DWIMAPSPanel);
