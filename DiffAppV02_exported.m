@@ -75,6 +75,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
         UIAxes8                        matlab.ui.control.UIAxes
         MapsTab                        matlab.ui.container.Tab
         DWIMAPSPanel                   matlab.ui.container.Panel
+        SaveMapsButton                 matlab.ui.control.Button
         ColorMapsDropDown              matlab.ui.control.DropDown
         ColorMapsDropDownLabel         matlab.ui.control.Label
         UIAxes3_10                     matlab.ui.control.UIAxes
@@ -315,9 +316,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
 
     % Display the results
 
-    fprintf('Posterior mean (f, D*, D): [%f, %f, %f]\n', posterior_mean);
-
-    fprintf('Posterior standard deviation (f, D*, D): [%f, %f, %f]\n', posterior_std);
+    
 
 
     % Plot the fitted IVIM model and the data
@@ -1083,7 +1082,7 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.contrastLowLimit = app.contrastValue(1);
             app.contrastUpLimit = app.contrastValue(2);
             
-            app.viewAdjustedImage = imadjust(app.viewVol(:,:,round(app.ViewSlider.Value)),[app.contrastLowLimit/255, app.contrastUpLimit/255],[])
+            app.viewAdjustedImage = imadjust(app.viewVol(:,:,round(app.ViewSlider.Value)),[app.contrastLowLimit/255, app.contrastUpLimit/255],[]);
             imagesc(app.UIAxes8,app.viewAdjustedImage+app.brightnessValue);
         end
 
@@ -1314,6 +1313,22 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.MeanR2S1EditField.Value = roifit.b;
            
             plot(app.UIAxes12,roifit,app.TEvals,boldFitsig);
+        end
+
+        % Button pushed function: SaveMapsButton
+        function SaveMapsButtonPushed(app, event)
+               
+               adc = app.ADCmap;
+               dTfree = app.Dtmap;
+               dPfree = app.Dpmap;
+               pFfree = app.pFmap;
+               dtSegmented = app.DtSegmap;
+               dpSegmented = app.DpSegmap;
+               pfSegmented = app.pFSegmap;
+               dtBayesian = app.dTbayesMap;
+               dpBayesian = app.dPbayesMap;
+               pfBayesian = app.pFbayesMap;
+               uisave({'adc','dTfree','dPfree','pFfree','dtSegmented','dpSegmented','pfSegmented','dtBayesian','dpBayesian','pfBayesian'},'Maps');
         end
     end
 
@@ -1843,6 +1858,12 @@ classdef DiffAppV02_exported < matlab.apps.AppBase
             app.ColorMapsDropDown = uidropdown(app.DWIMAPSPanel);
             app.ColorMapsDropDown.ValueChangedFcn = createCallbackFcn(app, @ColorMapsDropDownValueChanged, true);
             app.ColorMapsDropDown.Position = [1409 22 100 22];
+
+            % Create SaveMapsButton
+            app.SaveMapsButton = uibutton(app.DWIMAPSPanel, 'push');
+            app.SaveMapsButton.ButtonPushedFcn = createCallbackFcn(app, @SaveMapsButtonPushed, true);
+            app.SaveMapsButton.Position = [1342 54 168 30];
+            app.SaveMapsButton.Text = 'Save Maps';
 
             % Create SegmenterBetaTab
             app.SegmenterBetaTab = uitab(app.TabGroup);
