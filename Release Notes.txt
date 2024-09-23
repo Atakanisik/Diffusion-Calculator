@@ -1,8 +1,0 @@
-v1.0
--Initial Relaese without SAM
-v1.1
--Negative value creation issue Fixed
--Map Generation sometimes interfere with another fitting algoryhtm issue fixed
--Bayesian fitting with Markov-Chain Monte Carlo(MCMC) added
--Bayesian mapping added
--Upper limit boxes removed but calculation still intact.
