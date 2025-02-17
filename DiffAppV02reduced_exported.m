@@ -5,8 +5,9 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         DiffusonCalculatorforSIEMENSUIFigure  matlab.ui.Figure
         TabGroup                       matlab.ui.container.TabGroup
         CalculatorTab                  matlab.ui.container.Tab
+        UseMedullaROIFromSegmenterButton  matlab.ui.control.Button
         GenerateMapsWithSegmenterROIButton  matlab.ui.control.Button
-        UseROIFromSegmenterButton      matlab.ui.control.Button
+        UseCortexROIFromSegmenterButton  matlab.ui.control.Button
         LocationEditField              matlab.ui.control.NumericEditField
         LocationEditFieldLabel         matlab.ui.control.Label
         ImportFromLastDatabaseButton   matlab.ui.control.Button
@@ -116,6 +117,11 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         UIAxes10                       matlab.ui.control.UIAxes
         RegisterTab                    matlab.ui.container.Tab
         Panel                          matlab.ui.container.Panel
+        SegmentGuidedRegisterButton    matlab.ui.control.Button
+        MovingSegmentButton            matlab.ui.control.Button
+        FixedSegmentButton             matlab.ui.control.Button
+        DrawROIButton_3                matlab.ui.control.Button
+        DrawROIButton_2                matlab.ui.control.Button
         RegisterStatusEditField        matlab.ui.control.EditField
         StatusEditFieldLabel           matlab.ui.control.Label
         FilterButton                   matlab.ui.control.Button
@@ -147,14 +153,17 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         UIAxes13                       matlab.ui.control.UIAxes
         SegmenterTab                   matlab.ui.container.Tab
         Segmenter                      matlab.ui.container.Panel
-        UITable                        matlab.ui.control.Table
-        ModelDropDown                  matlab.ui.control.DropDown
-        ModelDropDownLabel             matlab.ui.control.Label
-        ResetButton                    matlab.ui.control.Button
+        CalculateSimilarityCoefficientsButton  matlab.ui.control.Button
+        DICEMedullaEditField           matlab.ui.control.NumericEditField
+        DICEMedullaEditFieldLabel      matlab.ui.control.Label
+        JaccardMedullaEditField        matlab.ui.control.NumericEditField
+        JaccardMedullaEditFieldLabel   matlab.ui.control.Label
+        DICECortexEditField            matlab.ui.control.NumericEditField
+        DICECortexEditFieldLabel       matlab.ui.control.Label
+        JaccardCortexEditField         matlab.ui.control.NumericEditField
+        JaccardCortexEditFieldLabel    matlab.ui.control.Label
+        DrawCortexGroundTruthButton    matlab.ui.control.Button
         SegmentButton                  matlab.ui.control.Button
-        AddRegionButton                matlab.ui.control.Button
-        RemovePointButton              matlab.ui.control.Button
-        AddPointButton                 matlab.ui.control.Button
         UIAxes14_2                     matlab.ui.control.UIAxes
         UIAxes14                       matlab.ui.control.UIAxes
     end
@@ -306,6 +315,34 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         preM;
         preN;
         preZ;
+        segmentFixedRegion;
+        segmentMovingRegion;
+        regSegFix;
+        regSegMove;
+        SegFixEmbd;
+        SegMoveEmbd;
+        segmentFixedMask;
+        segmentMoveMask;
+        segmentedFixed;
+        segmentedMove;
+
+        Cortex;
+        Medulla;
+        CortexMask;
+        MedullaMask;
+
+        CortexGtRoi;
+        CortexGt;
+        MedullaGt;
+        drawSegmented;
+
+
+
+        JaccardCortex;
+        DiceCortex;
+        JaccardMedulla;
+        DiceMedulla;
+        
     end
     
     methods (Access = public)
@@ -439,51 +476,63 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         
         function [MOVINGREG] = registerImages(app,MOVING,FIXED)
             fixedRefObj = imref2d(size(FIXED));
-            movingRefObj = imref2d(size(MOVING));
+movingRefObj = imref2d(size(MOVING));
 
 % Intensity-based registration
-            [optimizer, metric] = imregconfig('multimodal');
-            metric.NumberOfSpatialSamples = 500;
-            metric.NumberOfHistogramBins = 50;
-            metric.UseAllPixels = true;
-            optimizer.GrowthFactor = 1.050000;
-            optimizer.Epsilon = 1.50000e-06;
-            optimizer.InitialRadius = 2.50000e-03;
-            optimizer.MaximumIterations = 100;
-            
-            % Align centers
-            [xFixed,yFixed] = meshgrid(1:size(FIXED,2),1:size(FIXED,1));
-            [xMoving,yMoving] = meshgrid(1:size(MOVING,2),1:size(MOVING,1));
-            sumFixedIntensity = sum(FIXED(:));
-            sumMovingIntensity = sum(MOVING(:));
-            fixedXCOM = (fixedRefObj.PixelExtentInWorldX .* (sum(xFixed(:).*double(FIXED(:))) ./ sumFixedIntensity)) + fixedRefObj.XWorldLimits(1);
-            fixedYCOM = (fixedRefObj.PixelExtentInWorldY .* (sum(yFixed(:).*double(FIXED(:))) ./ sumFixedIntensity)) + fixedRefObj.YWorldLimits(1);
-            movingXCOM = (movingRefObj.PixelExtentInWorldX .* (sum(xMoving(:).*double(MOVING(:))) ./ sumMovingIntensity)) + movingRefObj.XWorldLimits(1);
-            movingYCOM = (movingRefObj.PixelExtentInWorldY .* (sum(yMoving(:).*double(MOVING(:))) ./ sumMovingIntensity)) + movingRefObj.YWorldLimits(1);
-            translationX = fixedXCOM - movingXCOM;
-            translationY = fixedYCOM - movingYCOM;
-            
-            % Coarse alignment
-            initTform = affinetform2d();
-            initTform.A(1:2,3) = [translationX ; translationY];
-            
-            % Normalize images
-            movingInit = mat2gray(MOVING);
-            fixedInit = mat2gray(FIXED);
-            
-            % Apply transformation
-            tform = imregtform(movingInit,movingRefObj,fixedInit,fixedRefObj,'rigid',optimizer,metric,'PyramidLevels',3,'InitialTransformation',initTform);
-            MOVINGREG.Transformation = tform;
-            MOVINGREG.RegisteredImage = imwarp(MOVING, movingRefObj, tform, 'OutputView', fixedRefObj, 'SmoothEdges', true);
-            
-            % Nonrigid registration
-            [MOVINGREG.DisplacementField,MOVINGREG.RegisteredImage] = imregdemons(MOVINGREG.RegisteredImage,FIXED,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
-            
-            % Store spatial referencing object
-            MOVINGREG.SpatialRefObj = fixedRefObj;
+[optimizer, metric] = imregconfig('multimodal');
+metric.NumberOfSpatialSamples = 500;
+metric.NumberOfHistogramBins = 50;
+metric.UseAllPixels = true;
+optimizer.GrowthFactor = 1.050000;
+optimizer.Epsilon = 1.50000e-06;
+optimizer.InitialRadius = 5.25000e-03;
+optimizer.MaximumIterations = 100;
+
+% Align centers
+fixedCenterXWorld = mean(fixedRefObj.XWorldLimits);
+fixedCenterYWorld = mean(fixedRefObj.YWorldLimits);
+movingCenterXWorld = mean(movingRefObj.XWorldLimits);
+movingCenterYWorld = mean(movingRefObj.YWorldLimits);
+translationX = fixedCenterXWorld - movingCenterXWorld;
+translationY = fixedCenterYWorld - movingCenterYWorld;
+
+% Coarse alignment
+initTform = affinetform2d();
+initTform.A(1:2,3) = [translationX ; translationY];
+
+% Apply Gaussian blur
+fixedInit = imgaussfilt(FIXED,1.000000);
+movingInit = imgaussfilt(MOVING,1.000000);
+
+% Normalize images
+movingInit = mat2gray(movingInit);
+fixedInit = mat2gray(fixedInit);
+
+% Apply transformation
+tform = imregtform(movingInit,movingRefObj,fixedInit,fixedRefObj,'similarity',optimizer,metric,'PyramidLevels',3,'InitialTransformation',initTform);
+MOVINGREG.Transformation = tform;
+MOVINGREG.RegisteredImage = imwarp(MOVING, movingRefObj, tform, 'OutputView', fixedRefObj, 'SmoothEdges', true);
+
+% Nonrigid registration
+[MOVINGREG.DisplacementField,MOVINGREG.RegisteredImage] = imregdemons(MOVINGREG.RegisteredImage,FIXED,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
+
+% Store spatial referencing object
+MOVINGREG.SpatialRefObj = fixedRefObj;
             
         end
-        
+        function [cortex,cortexBW,medulla,medullaBW] = segmentCortexMedulla(app,RegisteredImage)
+            RegisteredImage = imadjust(RegisteredImage);
+
+            % Threshold image with adaptive threshold
+            BW = imbinarize(im2gray(RegisteredImage), 'adaptive', 'Sensitivity', 0.500000, 'ForegroundPolarity', 'bright');
+            cortexBW = BW;
+            cortex = RegisteredImage;
+            cortex(~cortexBW) = 0;
+            medulla = imsubtract(RegisteredImage,cortex);
+            medullaBW = imbinarize(medulla);
+            medullaBW = bwareaopen(medullaBW,20);
+            medullaBW = imfill(medullaBW,"holes");
+        end
     end
     
 
@@ -1577,7 +1626,7 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
 
         % Button pushed function: ShowPairButton
         function ShowPairButtonPushed(app, event)
-            imshowpair(app.regFix,app.regMove,'falsecolor','Scaling','independent','Parent',app.UIAxes13_3);
+            imshowpair(app.regSegFix,app.regSegMove,'falsecolor','Scaling','independent','Parent',app.UIAxes13_3);
             app.FixedImageButton.BackgroundColor = [0 1 1];
             app.MovingImageButton.BackgroundColor = [0 1 1];
         end
@@ -1611,82 +1660,30 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             colormap(app.UIAxes14,'gray');
             app.RegisterStatusEditField.Value = "Creating Model and Embeddings";
             pause(0.001);
-            app.sam=segmentAnythingModel;
-            app.medsam = medicalSegmentAnythingModel;
-            app.samembedds = extractEmbeddings(app.sam,app.SegmenterImage);
-            app.medembedds = extractEmbeddings(app.medsam,app.SegmenterImage);
-            app.segmentForegroundPoints=[];
-            app.segmentBackgroundPoints = [];
+
             app.RegisterStatusEditField.Value = "Image Sent";
-        end
-
-        % Button pushed function: AddPointButton
-        function AddPointButtonPushed(app, event)
-            point = drawpoint(app.UIAxes14,'color','g');
-            app.segmentForegroundPoints = cat(1,app.segmentForegroundPoints,point.Position);
-        end
-
-        % Button pushed function: RemovePointButton
-        function RemovePointButtonPushed(app, event)
-            point = drawpoint(app.UIAxes14,'color','r');
-            app.segmentBackgroundPoints = cat(1,app.segmentBackgroundPoints,point.Position);
-        end
-
-        % Button pushed function: AddRegionButton
-        function AddRegionButtonPushed(app, event)
-            delete(findall(app.UIAxes14,'Type','images.roi'));
-         
-            app.segmentRegion = drawrectangle(app.UIAxes14);
         end
 
         % Button pushed function: SegmentButton
         function SegmentButtonPushed(app, event)
-            if app.ModelDropDown.Value == "MedSAM"
-                app.segmentMask = segmentObjectsFromEmbeddings(app.medsam,app.medembedds,size(app.SegmenterImage),BoundingBox = app.segmentRegion.Position);
-            elseif app.ModelDropDown.Value == "SAM"
-                app.segmentMask = segmentObjectsFromEmbeddings(app.sam,app.samembedds,size(app.SegmenterImage), ...
-                    ForegroundPoints = app.segmentForegroundPoints,BackgroundPoints=app.segmentBackgroundPoints,BoundingBox = app.segmentRegion.Position);
-            end
-
-            app.imageSegmented = insertObjectMask(app.SegmenterImage,app.segmentMask);
+          
+            [app.Cortex,app.CortexMask,app.Medulla,app.MedullaMask] = segmentCortexMedulla(app,app.SegmenterImage);
+            app.imageSegmented = insertObjectMask(app.SegmenterImage,app.CortexMask,"MaskColor","yellow","Opacity",0.3);
+            app.imageSegmented=insertObjectMask(app.imageSegmented,app.MedullaMask,"MaskColor","red","Opacity",0.3);
+            
             imagesc(app.UIAxes14_2,app.imageSegmented);
-            props = regionprops(app.segmentMask,"all");
-            props = struct2table(props,"AsArray",true);
-            app.UITable.ColumnName = props.Properties.VariableNames;
-            app.UITable.Data = props(:,:);
-            app.UseROIFromSegmenterButton.Enable = "on"
+            app.UseCortexROIFromSegmenterButton.Enable = "on";
+            app.UseMedullaROIFromSegmenterButton.Enable = "on";
+            app.DrawCortexGroundTruthButton.Enable = "on";
 
 
         end
 
-        % Button pushed function: ResetButton
-        function ResetButtonPushed(app, event)
-            delete(findall(app.UIAxes14,'Type','images.roi'));
-            app.segmentRegion = [];
-            app.segmentForegroundPoints =[];
-            app.segmentBackgroundPoints = [];
-        end
-
-        % Value changed function: ModelDropDown
-        function ModelDropDownValueChanged(app, event)
-            value = app.ModelDropDown.Value;
-            if value == "MedSAM"
-                app.AddPointButton.Enable = "off";
-                app.AddPointButton.Visible = "off";
-                app.RemovePointButton.Enable = "off";
-                app.RemovePointButton.Visible = "off";
-            elseif value == "SAM"
-                app.AddPointButton.Enable = "on";
-                app.AddPointButton.Visible = "on";
-                app.RemovePointButton.Enable = "on";
-                app.RemovePointButton.Visible = "on";
-            end
-        end
-
-        % Button pushed function: UseROIFromSegmenterButton
-        function UseROIFromSegmenterButtonPushed(app, event)
+        % Button pushed function: UseCortexROIFromSegmenterButton
+        function UseCortexROIFromSegmenterButtonPushed(app, event)
             app.GenerateMapsWithSegmenterROIButton.Enable = "on";
-            mask = app.segmentMask;
+            mask = app.CortexMask;
+            app.segmentMask = app.CortexMask;
             app.sigData = [0];
 
             for i = 0:1:length(app.bvals)-1
@@ -1708,7 +1705,7 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             ylabel(app.UIAxes2,'S / S0');
             overlayimage = app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)));
             overlayimage = imadjust(overlayimage);
-            overlayimage = insertObjectMask(overlayimage,mask);
+            overlayimage = insertObjectMask(overlayimage,mask,"MaskColor","magenta","Opacity",0.3);
             imagesc(app.UIAxes,overlayimage);
             xlim(app.UIAxes,[0 ,app.N]);
             ylim(app.UIAxes,[0, app.M]);
@@ -1915,6 +1912,133 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             xlim(app.PreviewAxes,[0,app.preN]);
             ylim(app.PreviewAxes,[0,app.preM]);
             
+        end
+
+        % Button pushed function: DrawROIButton_2
+        function DrawROIButton_2Pushed(app, event)
+             delete(findall(app.UIAxes13,'Type','images.roi'));
+         
+            app.segmentFixedRegion = drawrectangle(app.UIAxes13);
+            isempty(app.medsam)
+            
+            if isempty(app.medsam) 
+                app.medsam = medicalSegmentAnythingModel;
+            end
+            app.regSegFix = imadjust(app.fixedVol(:,:,app.fixedSliderValue));
+            app.SegFixEmbd = extractEmbeddings(app.medsam,app.regSegFix);
+            app.segmentFixedMask = segmentObjectsFromEmbeddings(app.medsam,app.SegFixEmbd,size(app.regSegFix),BoundingBox = app.segmentFixedRegion.Position);
+            app.segmentedFixed = insertObjectMask(app.regSegFix,app.segmentFixedMask);
+            imagesc(app.UIAxes13,app.segmentedFixed);
+            colormap(app.UIAxes13,"gray");
+
+        end
+
+        % Button pushed function: DrawROIButton_3
+        function DrawROIButton_3Pushed(app, event)
+             delete(findall(app.UIAxes13_2,'Type','images.roi'));
+            app.regSegMove  = imadjust(app.moveVol(:,:,app.movingSliderValue));
+            app.regSegMove = imresize(app.regSegMove,[app.fixedM,app.fixedN]);
+            imagesc(app.UIAxes13_2,app.regSegMove);
+            xlim(app.UIAxes13_2,[0,app.fixedN]);
+            ylim(app.UIAxes13_2,[0,app.fixedM]);
+            app.segmentMovingRegion = drawrectangle(app.UIAxes13_2);
+            if isempty(app.medsam)
+                app.medsam = medicalSegmentAnythingModel;
+            end
+            
+            app.SegMoveEmbd = extractEmbeddings(app.medsam,app.regSegMove);
+            app.segmentMoveMask = segmentObjectsFromEmbeddings(app.medsam,app.SegMoveEmbd,size(app.regSegMove),BoundingBox = app.segmentMovingRegion.Position);
+            app.segmentedMove = insertObjectMask(app.regSegMove,app.segmentMoveMask);
+            imagesc(app.UIAxes13_2,app.segmentedMove);
+            colormap(app.UIAxes13_2,"gray");
+
+
+        end
+
+        % Button pushed function: FixedSegmentButton
+        function FixedSegmentButtonPushed(app, event)
+            app.regSegFix(~app.segmentFixedMask) = 0;
+            imagesc(app.UIAxes13_3,app.regSegFix);
+        end
+
+        % Button pushed function: MovingSegmentButton
+        function MovingSegmentButtonPushed(app, event)
+            app.regSegMove(~app.segmentMoveMask) = 0;
+            imagesc(app.UIAxes13_3,app.regSegMove);
+        end
+
+        % Button pushed function: SegmentGuidedRegisterButton
+        function SegmentGuidedRegisterButtonPushed(app, event)
+            app.RegisterStatusEditField.Value = "Registering Images";
+            pause(0.001);
+            app.registerStruct = registerImages(app,app.regSegMove,app.regSegFix);
+            imshowpair(app.regSegFix,app.registerStruct.RegisteredImage,'falsecolor','ColorChannel',[1 2 0],'Parent',app.UIAxes13_3);
+            app.RegisterStatusEditField.Value = "Images Registered";
+        end
+
+        % Button pushed function: UseMedullaROIFromSegmenterButton
+        function UseMedullaROIFromSegmenterButtonPushed(app, event)
+            app.GenerateMapsWithSegmenterROIButton.Enable = "on";
+            mask = app.MedullaMask;
+            app.segmentMask = app.MedullaMask;
+            app.sigData = [0];
+
+            for i = 0:1:length(app.bvals)-1
+                    tempvol = app.vol(:,:,(i+1)+((app.sliceNum-1)*length(app.bvals)));
+               
+                    meanData = mean(tempvol(mask));
+                    app.sigData = horzcat(app.sigData,meanData);
+            end
+            
+            app.sigData = app.sigData(2:end);
+            app.s_s0 = app.sigData./app.sigData(1);
+            % app.s_s0 = app.s_s0(find(app.s_s0 <= 1));
+            % app.s_s0
+            % app.bvals = app.bvals(find(app.s_s0 <= 1));
+            % app.bvals
+            plot(app.bvals,app.s_s0,'Parent',app.UIAxes2);
+            title(app.UIAxes2,'Signal Data');
+            xlabel(app.UIAxes2,'B-Value');
+            ylabel(app.UIAxes2,'S / S0');
+            overlayimage = app.vol(:,:,(app.showBval)+((app.sliceNum-1)*length(app.bvals)));
+            overlayimage = imadjust(overlayimage);
+            overlayimage = insertObjectMask(overlayimage,mask,"MaskColor","magenta","Opacity",0.3);
+            imagesc(app.UIAxes,overlayimage);
+            xlim(app.UIAxes,[0 ,app.N]);
+            ylim(app.UIAxes,[0, app.M]);
+            title(app.UIAxes,'IMAGE');
+        end
+
+        % Button pushed function: DrawCortexGroundTruthButton
+        function DrawCortexGroundTruthButtonPushed(app, event)
+            app.CortexGtRoi = drawassisted(findobj(app.UIAxes14,'Type','Image'));
+            app.CortexGt = createMask(app.CortexGtRoi);
+            temp = app.SegmenterImage;
+            tempDraw = app.SegmenterImage;
+            temp(~app.CortexGt) = 0;
+            app.MedullaGt = imsubtract(app.SegmenterImage,temp);
+            app.MedullaGt = imbinarize(app.MedullaGt);
+            app.MedullaGt = bwareaopen(app.MedullaGt,20);
+            app.MedullaGt = imfill(app.MedullaGt,"holes");
+            app.drawSegmented = insertObjectMask(tempDraw,app.CortexGt,"MaskColor","magenta","Opacity",0.3);
+            app.drawSegmented=insertObjectMask(app.drawSegmented,app.MedullaMask,"MaskColor","green","Opacity",0.3);
+            imagesc(app.UIAxes14,app.drawSegmented);
+        end
+
+        % Button pushed function: CalculateSimilarityCoefficientsButton
+        function CalculateSimilarityCoefficientsButtonPushed(app, event)
+            app.JaccardCortex = jaccard(app.CortexMask,app.CortexGt);
+            app.DiceCortex = dice(app.CortexMask,app.CortexGt);
+            app.JaccardMedulla = jaccard(app.MedullaMask,app.MedullaGt);
+            app.DiceMedulla = dice(app.MedullaMask,app.MedullaGt);
+            app.JaccardCortexEditField.Value = app.JaccardCortex;
+            app.DICECortexEditField.Value = app.DiceCortex;
+            app.JaccardMedullaEditField.Value = app.JaccardMedulla;
+            app.DICEMedullaEditField.Value = app.DiceMedulla;
+            figure(1);
+            imshowpair(app.MedullaMask,app.MedullaGt,'falsecolor','Scaling','independent');
+            figure(2);
+            imshowpair(app.CortexMask,app.CortexGt,'falsecolor','Scaling','independent');
         end
     end
 
@@ -2205,19 +2329,26 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             app.LocationEditField = uieditfield(app.CalculatorTab, 'numeric');
             app.LocationEditField.Position = [810 262 62 27];
 
-            % Create UseROIFromSegmenterButton
-            app.UseROIFromSegmenterButton = uibutton(app.CalculatorTab, 'push');
-            app.UseROIFromSegmenterButton.ButtonPushedFcn = createCallbackFcn(app, @UseROIFromSegmenterButtonPushed, true);
-            app.UseROIFromSegmenterButton.Enable = 'off';
-            app.UseROIFromSegmenterButton.Position = [20 49 189 32];
-            app.UseROIFromSegmenterButton.Text = 'Use ROI From Segmenter';
+            % Create UseCortexROIFromSegmenterButton
+            app.UseCortexROIFromSegmenterButton = uibutton(app.CalculatorTab, 'push');
+            app.UseCortexROIFromSegmenterButton.ButtonPushedFcn = createCallbackFcn(app, @UseCortexROIFromSegmenterButtonPushed, true);
+            app.UseCortexROIFromSegmenterButton.Enable = 'off';
+            app.UseCortexROIFromSegmenterButton.Position = [18 49 194 32];
+            app.UseCortexROIFromSegmenterButton.Text = 'Use Cortex ROI From Segmenter';
 
             % Create GenerateMapsWithSegmenterROIButton
             app.GenerateMapsWithSegmenterROIButton = uibutton(app.CalculatorTab, 'push');
             app.GenerateMapsWithSegmenterROIButton.ButtonPushedFcn = createCallbackFcn(app, @GenerateMapsWithSegmenterROIButtonPushed, true);
             app.GenerateMapsWithSegmenterROIButton.Enable = 'off';
-            app.GenerateMapsWithSegmenterROIButton.Position = [7 101 219 35];
+            app.GenerateMapsWithSegmenterROIButton.Position = [6 144 219 35];
             app.GenerateMapsWithSegmenterROIButton.Text = 'Generate Maps With Segmenter ROI';
+
+            % Create UseMedullaROIFromSegmenterButton
+            app.UseMedullaROIFromSegmenterButton = uibutton(app.CalculatorTab, 'push');
+            app.UseMedullaROIFromSegmenterButton.ButtonPushedFcn = createCallbackFcn(app, @UseMedullaROIFromSegmenterButtonPushed, true);
+            app.UseMedullaROIFromSegmenterButton.Enable = 'off';
+            app.UseMedullaROIFromSegmenterButton.Position = [15 89 201 32];
+            app.UseMedullaROIFromSegmenterButton.Text = 'Use Medulla ROI From Segmenter';
 
             % Create DicomTab
             app.DicomTab = uitab(app.TabGroup);
@@ -2787,6 +2918,37 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             app.RegisterStatusEditField = uieditfield(app.Panel, 'text');
             app.RegisterStatusEditField.Position = [1242 9 285 24];
 
+            % Create DrawROIButton_2
+            app.DrawROIButton_2 = uibutton(app.Panel, 'push');
+            app.DrawROIButton_2.ButtonPushedFcn = createCallbackFcn(app, @DrawROIButton_2Pushed, true);
+            app.DrawROIButton_2.Position = [455 664 97 25];
+            app.DrawROIButton_2.Text = 'Draw ROI';
+
+            % Create DrawROIButton_3
+            app.DrawROIButton_3 = uibutton(app.Panel, 'push');
+            app.DrawROIButton_3.ButtonPushedFcn = createCallbackFcn(app, @DrawROIButton_3Pushed, true);
+            app.DrawROIButton_3.Position = [974 664 97 25];
+            app.DrawROIButton_3.Text = 'Draw ROI';
+
+            % Create FixedSegmentButton
+            app.FixedSegmentButton = uibutton(app.Panel, 'push');
+            app.FixedSegmentButton.ButtonPushedFcn = createCallbackFcn(app, @FixedSegmentButtonPushed, true);
+            app.FixedSegmentButton.Position = [456 704 98 24];
+            app.FixedSegmentButton.Text = 'Fixed Segment';
+
+            % Create MovingSegmentButton
+            app.MovingSegmentButton = uibutton(app.Panel, 'push');
+            app.MovingSegmentButton.ButtonPushedFcn = createCallbackFcn(app, @MovingSegmentButtonPushed, true);
+            app.MovingSegmentButton.Position = [973 704 105 24];
+            app.MovingSegmentButton.Text = 'Moving Segment';
+
+            % Create SegmentGuidedRegisterButton
+            app.SegmentGuidedRegisterButton = uibutton(app.Panel, 'push');
+            app.SegmentGuidedRegisterButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentGuidedRegisterButtonPushed, true);
+            app.SegmentGuidedRegisterButton.Icon = fullfile(pathToMLAPP, 'icons', 'register.png');
+            app.SegmentGuidedRegisterButton.Position = [1256 93 253 30];
+            app.SegmentGuidedRegisterButton.Text = 'Segment Guided Register';
+
             % Create SegmenterTab
             app.SegmenterTab = uitab(app.TabGroup);
             app.SegmenterTab.Title = 'Segmenter';
@@ -2812,27 +2974,6 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             zlabel(app.UIAxes14_2, 'Z')
             app.UIAxes14_2.Position = [891 221 634 570];
 
-            % Create AddPointButton
-            app.AddPointButton = uibutton(app.Segmenter, 'push');
-            app.AddPointButton.ButtonPushedFcn = createCallbackFcn(app, @AddPointButtonPushed, true);
-            app.AddPointButton.BackgroundColor = [0.3922 0.8314 0.0745];
-            app.AddPointButton.Position = [693 745 164 50];
-            app.AddPointButton.Text = 'Add Point';
-
-            % Create RemovePointButton
-            app.RemovePointButton = uibutton(app.Segmenter, 'push');
-            app.RemovePointButton.ButtonPushedFcn = createCallbackFcn(app, @RemovePointButtonPushed, true);
-            app.RemovePointButton.BackgroundColor = [0.9098 0.2902 0.2902];
-            app.RemovePointButton.Position = [693 664 164 50];
-            app.RemovePointButton.Text = 'Remove Point';
-
-            % Create AddRegionButton
-            app.AddRegionButton = uibutton(app.Segmenter, 'push');
-            app.AddRegionButton.ButtonPushedFcn = createCallbackFcn(app, @AddRegionButtonPushed, true);
-            app.AddRegionButton.BackgroundColor = [0.349 0.8784 0.9686];
-            app.AddRegionButton.Position = [693 571 164 50];
-            app.AddRegionButton.Text = 'Add Region';
-
             % Create SegmentButton
             app.SegmentButton = uibutton(app.Segmenter, 'push');
             app.SegmentButton.ButtonPushedFcn = createCallbackFcn(app, @SegmentButtonPushed, true);
@@ -2840,30 +2981,58 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
             app.SegmentButton.Position = [682 167 190 40];
             app.SegmentButton.Text = 'Segment';
 
-            % Create ResetButton
-            app.ResetButton = uibutton(app.Segmenter, 'push');
-            app.ResetButton.ButtonPushedFcn = createCallbackFcn(app, @ResetButtonPushed, true);
-            app.ResetButton.Position = [694 46 170 48];
-            app.ResetButton.Text = 'Reset';
+            % Create DrawCortexGroundTruthButton
+            app.DrawCortexGroundTruthButton = uibutton(app.Segmenter, 'push');
+            app.DrawCortexGroundTruthButton.ButtonPushedFcn = createCallbackFcn(app, @DrawCortexGroundTruthButtonPushed, true);
+            app.DrawCortexGroundTruthButton.Enable = 'off';
+            app.DrawCortexGroundTruthButton.Position = [233 147 223 41];
+            app.DrawCortexGroundTruthButton.Text = 'Draw Cortex Ground Truth';
 
-            % Create ModelDropDownLabel
-            app.ModelDropDownLabel = uilabel(app.Segmenter);
-            app.ModelDropDownLabel.HorizontalAlignment = 'right';
-            app.ModelDropDownLabel.Position = [1382 19 38 22];
-            app.ModelDropDownLabel.Text = 'Model';
+            % Create JaccardCortexEditFieldLabel
+            app.JaccardCortexEditFieldLabel = uilabel(app.Segmenter);
+            app.JaccardCortexEditFieldLabel.HorizontalAlignment = 'right';
+            app.JaccardCortexEditFieldLabel.Position = [923 156 86 22];
+            app.JaccardCortexEditFieldLabel.Text = 'Jaccard Cortex';
 
-            % Create ModelDropDown
-            app.ModelDropDown = uidropdown(app.Segmenter);
-            app.ModelDropDown.Items = {'SAM', 'MedSAM'};
-            app.ModelDropDown.ValueChangedFcn = createCallbackFcn(app, @ModelDropDownValueChanged, true);
-            app.ModelDropDown.Position = [1435 19 89 21];
-            app.ModelDropDown.Value = 'SAM';
+            % Create JaccardCortexEditField
+            app.JaccardCortexEditField = uieditfield(app.Segmenter, 'numeric');
+            app.JaccardCortexEditField.Position = [1024 156 61 22];
 
-            % Create UITable
-            app.UITable = uitable(app.Segmenter);
-            app.UITable.ColumnName = {'Column 1'; 'Column 2'; 'Column 3'; 'Column 4'};
-            app.UITable.RowName = {};
-            app.UITable.Position = [894 78 634 133];
+            % Create DICECortexEditFieldLabel
+            app.DICECortexEditFieldLabel = uilabel(app.Segmenter);
+            app.DICECortexEditFieldLabel.HorizontalAlignment = 'right';
+            app.DICECortexEditFieldLabel.Position = [1161 156 72 22];
+            app.DICECortexEditFieldLabel.Text = 'DICE Cortex';
+
+            % Create DICECortexEditField
+            app.DICECortexEditField = uieditfield(app.Segmenter, 'numeric');
+            app.DICECortexEditField.Position = [1248 156 61 22];
+
+            % Create JaccardMedullaEditFieldLabel
+            app.JaccardMedullaEditFieldLabel = uilabel(app.Segmenter);
+            app.JaccardMedullaEditFieldLabel.HorizontalAlignment = 'right';
+            app.JaccardMedullaEditFieldLabel.Position = [917 108 92 22];
+            app.JaccardMedullaEditFieldLabel.Text = 'Jaccard Medulla';
+
+            % Create JaccardMedullaEditField
+            app.JaccardMedullaEditField = uieditfield(app.Segmenter, 'numeric');
+            app.JaccardMedullaEditField.Position = [1024 108 61 22];
+
+            % Create DICEMedullaEditFieldLabel
+            app.DICEMedullaEditFieldLabel = uilabel(app.Segmenter);
+            app.DICEMedullaEditFieldLabel.HorizontalAlignment = 'right';
+            app.DICEMedullaEditFieldLabel.Position = [1154 106 79 22];
+            app.DICEMedullaEditFieldLabel.Text = 'DICE Medulla';
+
+            % Create DICEMedullaEditField
+            app.DICEMedullaEditField = uieditfield(app.Segmenter, 'numeric');
+            app.DICEMedullaEditField.Position = [1248 106 61 22];
+
+            % Create CalculateSimilarityCoefficientsButton
+            app.CalculateSimilarityCoefficientsButton = uibutton(app.Segmenter, 'push');
+            app.CalculateSimilarityCoefficientsButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateSimilarityCoefficientsButtonPushed, true);
+            app.CalculateSimilarityCoefficientsButton.Position = [249 79 183 23];
+            app.CalculateSimilarityCoefficientsButton.Text = 'Calculate Similarity Coefficients';
 
             % Show the figure after all components are created
             app.DiffusonCalculatorforSIEMENSUIFigure.Visible = 'on';
