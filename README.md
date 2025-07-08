@@ -52,4 +52,4 @@ You can use Viewer for all sequences.
  if you use this prototype application please refer me as:
 Research Assistant Atakan Işık
 Baskent University Biomedical Engineering Department.
---ORC-ID:0000-0001-5433-4442
+--ORC-ID:0000-0001-5433-4442 and software [![DOI](https://zenodo.org/badge/842934415.svg)](https://doi.org/10.5281/zenodo.15836050)
