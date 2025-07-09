@@ -5,12 +5,12 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         DiffusonCalculatorforSIEMENSUIFigure  matlab.ui.Figure
         TabGroup                       matlab.ui.container.TabGroup
         CalculatorTab                  matlab.ui.container.Tab
+        CopyDataButton                 matlab.ui.control.Button
         UseMedullaROIFromSegmenterButton  matlab.ui.control.Button
         GenerateMapsWithSegmenterROIButton  matlab.ui.control.Button
         UseCortexROIFromSegmenterButton  matlab.ui.control.Button
         LocationEditField              matlab.ui.control.NumericEditField
         LocationEditFieldLabel         matlab.ui.control.Label
-        ImportFromLastDatabaseButton   matlab.ui.control.Button
         SmoothingDegreeEditField       matlab.ui.control.NumericEditField
         SmoothingDegreeEditFieldLabel  matlab.ui.control.Label
         mapRoiSwitch                   matlab.ui.control.Switch
@@ -26,12 +26,26 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         EditField_2                    matlab.ui.control.NumericEditField
         EditField                      matlab.ui.control.NumericEditField
         AlgorithmButtonGroup           matlab.ui.container.ButtonGroup
+        TriExpButton                   matlab.ui.control.RadioButton
         BayesianButton                 matlab.ui.control.RadioButton
         BiExpSegButton                 matlab.ui.control.RadioButton
         BiexpFreeButton                matlab.ui.control.RadioButton
         MonoExpButton                  matlab.ui.control.RadioButton
         LoadDICOMButton                matlab.ui.control.Button
         OptionsPanel                   matlab.ui.container.Panel
+        pFslowEditField                matlab.ui.control.NumericEditField
+        pFslowEditFieldLabel           matlab.ui.control.Label
+        pFinterEditField               matlab.ui.control.NumericEditField
+        pFinterEditFieldLabel          matlab.ui.control.Label
+        pFfastEditField                matlab.ui.control.NumericEditField
+        pFfastEditFieldLabel           matlab.ui.control.Label
+        ImportFromLastDatabaseButton   matlab.ui.control.Button
+        DslowEditField                 matlab.ui.control.NumericEditField
+        DslowEditField_5Label          matlab.ui.control.Label
+        DinterEditField                matlab.ui.control.NumericEditField
+        DinterEditFieldLabel           matlab.ui.control.Label
+        DfastEditField                 matlab.ui.control.NumericEditField
+        DfastEditFieldLabel            matlab.ui.control.Label
         MultiRoiSwitch                 matlab.ui.control.Switch
         DrawMultipleROIButton          matlab.ui.control.Button
         DrawROIButton                  matlab.ui.control.StateButton
@@ -215,6 +229,8 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         segfo;
         fo2;
         foadc;
+        fo_triexp;
+        triexptype;
         mymodel;
         DpSegmap;
         DtSegmap;
@@ -243,6 +259,13 @@ classdef DiffAppV02reduced_exported < matlab.apps.AppBase
         frames;
         seriestime;
         smoothDegree = 0.5;
+        triexp_result;
+        triexp_f1;
+        triexp_f2;
+        triexp_f3;
+        triexp_d1;
+        triexp_d2;
+        triexp_d3;
         
         
         
@@ -648,6 +671,15 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.fo2 = fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.01],'Lower',[0],'Upper',[0.1]);
             app.foadc =fitoptions('Method','NonLinearLeastSquares','Algorithm','Levenberg-Marquardt','StartPoint',[0.001]);
             app.adctype =fittype( 'exp(-b*x)', 'independent', 'x', 'dependent', 'y' );
+             app.triexptype = fittype( ...
+    'S0 * (f1 * exp(-b * D1) + f2 * exp(-b * D2) + (1 - f1 - f2) * exp(-b * D3))', ...
+    'independent', 'b', ...
+    'coefficients', {'f1', 'f2', 'D1', 'D2', 'D3', 'S0'});
+            app.fo_triexp = fitoptions('Method','NonLinearLeastSquares', ...
+    'Algorithm','Levenberg-Marquardt', ...
+    'StartPoint',[0.1, 0.1, 0.01, 0.003, 0.0005, 1], ...
+    'Lower',[0, 0, 0.005, 0.0005, 0.0001, 0.5], ...
+    'Upper',[0.8, 0.8, 0.1, 0.02, 0.005, 2]);
             [app.adcfit, gadc] = fit(app.bvals_ivim.',app.s_s0_ivim.',app.adctype,app.foadc);
             [app.freeFit, gfree] = fit(app.bvals_ivim.',app.s_s0_ivim.',app.fotype,app.fo);
             app.paramFree = [app.freeFit.D app.freeFit.D_star app.freeFit.f];
@@ -663,6 +695,13 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.paramSeg = [dp dt pf];
 
             app.ADC = app.adcfit.b;
+             [app.triexp_result,gtriexp] = fit(app.bvals_ivim.',app.s_s0_ivim.',app.triexptype,app.fo_triexp);
+            app.triexp_f1 = app.triexp_result.f1;
+            app.triexp_f2 = app.triexp_result.f2;
+            app.triexp_f3 = 1 - app.triexp_f1 - app.triexp_f2;
+            app.triexp_d1 = app.triexp_result.D1;
+            app.triexp_d2 = app.triexp_result.D2;
+            app.triexp_d3 = app.triexp_result.D3;
             if (app.MonoExpButton.Value == 1)
                 app.rsqr = gadc.rsquare;
                 app.RSquareEditField.Value = app.rsqr;
@@ -670,6 +709,12 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
                 app.DpEditField.Value = 0;
                 app.DtEditField.Value = 0;
                 app.pFEditField.Value = 0;
+                app.DfastEditField.Value = 0;
+                app.DinterEditField.Value = 0;
+                app.DslowEditField.Value = 0;
+                app.pFfastEditField.Value = 0;
+                app.pFinterEditField.Value = 0;
+                app.pFslowEditField.Value = 0;
                 plot(app.UIAxes2,app.adcfit,app.bvals_ivim,app.s_s0_ivim);
                 ylim(app.UIAxes2,[0 1]);
                 title(app.UIAxes2,'Fitting Graphic');
@@ -683,6 +728,12 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
                 app.DpEditField.Value = app.paramFree(2);
                 app.DtEditField.Value = app.paramFree(1);
                 app.pFEditField.Value = app.paramFree(3);
+                app.DfastEditField.Value = 0;
+                app.DinterEditField.Value = 0;
+                app.DslowEditField.Value = 0;
+                app.pFfastEditField.Value = 0;
+                app.pFinterEditField.Value = 0;
+                app.pFslowEditField.Value = 0;
                 app.DtUpperLimitfree = app.DtEditField.Value*2;
                 app.DpUpperLimitfree = app.DpEditField.Value*2;
                 plot(app.UIAxes2,app.freeFit,app.bvals_ivim,app.s_s0_ivim);
@@ -698,6 +749,12 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
                 app.DpEditField.Value = app.paramSeg(1);
                 app.DtEditField.Value = app.paramSeg(2);
                 app.pFEditField.Value = app.paramSeg(3);
+                app.DfastEditField.Value = 0;
+                app.DinterEditField.Value = 0;
+                app.DslowEditField.Value = 0;
+                app.pFfastEditField.Value = 0;
+                app.pFinterEditField.Value = 0;
+                app.pFslowEditField.Value = 0;
                 app.DtUpperLimitseg = app.DtEditField.Value*2;
                 app.DpUpperLimitseg = app.DpEditField.Value*2;
                 plot(app.UIAxes2,app.segFitAll,app.bvals_ivim,app.s_s0_ivim);
@@ -714,6 +771,12 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
                 app.DpEditField.Value = p(2);
                 app.DtEditField.Value = p(3);
                 app.pFEditField.Value = p(1);
+                app.DfastEditField.Value = 0;
+                app.DinterEditField.Value = 0;
+                app.DslowEditField.Value = 0;
+                app.pFfastEditField.Value = 0;
+                app.pFinterEditField.Value = 0;
+                app.pFslowEditField.Value = 0;
                 app.DtUpperLimitBayes = app.DtEditField.Value*2;
                 app.DpUpperLimitBayes = app.DpEditField.Value*2;
                 plot(app.UIAxes2,app.bvals_ivim,app.s_s0_ivim,'o',app.bvals_ivim,fits,'-');
@@ -721,6 +784,25 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
                 title(app.UIAxes2,'Fitting Graphic');
                 xlabel(app.UIAxes2,'B-Value');
                 ylabel(app.UIAxes2,'S / S0');
+            end
+            if (app.TriExpButton.Value == 1)
+                app.rsqr = gtriexp.rsquare;
+                app.RSquareEditField.Value = app.rsqr;
+                app.ADCEditField.Value = 0;
+                app.DpEditField.Value = 0;
+                app.DtEditField.Value = 0;
+                app.pFEditField.Value = 0;
+                app.DfastEditField.Value = app.triexp_d1;
+                app.DinterEditField.Value = app.triexp_d2;
+                app.DslowEditField.Value = app.triexp_d3;
+                app.pFfastEditField.Value = app.triexp_f1;
+                app.pFinterEditField.Value = app.triexp_f2;
+                app.pFslowEditField.Value = app.triexp_f3;
+                plot(app.UIAxes2,app.triexp_result,app.bvals_ivim,app.s_s0_ivim);
+                title(app.UIAxes2,'Fitting Graphic');
+                xlabel(app.UIAxes2,'B-Value');
+                ylabel(app.UIAxes2,'S / S0');
+                
             end
             
 
@@ -2040,6 +2122,47 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             figure(2);
             imshowpair(app.CortexMask,app.CortexGt,'falsecolor','Scaling','independent');
         end
+
+        % Button pushed function: CopyDataButton
+        function CopyDataButtonPushed(app, event)
+            fields = {
+                app.ADCEditField;
+                app.DpEditField;
+                app.DtEditField;
+                app.pFEditField;
+                app.DfastEditField;
+                app.DinterEditField;
+                app.DslowEditField;
+                app.pFfastEditField;
+                app.pFinterEditField;
+                app.pFslowEditField;
+                }
+    values = [];
+
+    for i = 1:numel(fields)
+        fieldVal = fields{i}.Value;
+
+        % Değer string ise sayıya çevir
+        if ischar(fieldVal) || isstring(fieldVal)
+            val = str2double(fieldVal);
+        else
+            val = fieldVal;
+        end
+
+        % Geçerli ve sıfır değilse kaydet
+        if ~isnan(val) && val ~= 0
+            values(end+1) = val; %#ok<AGROW>
+        end
+    end
+
+    % 3. Panoya tek satır, tab ayraclı metin olarak kopyala
+    if ~isempty(values)
+        clipboardStr = strjoin(arrayfun(@(x) sprintf('%.5f', x), values, 'UniformOutput', false), '\t');
+        clipboard('copy', clipboardStr);
+    end
+       
+
+        end
     end
 
     % Component initialization
@@ -2109,69 +2232,69 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.OptionsPanel = uipanel(app.CalculatorTab);
             app.OptionsPanel.BorderType = 'none';
             app.OptionsPanel.Title = 'Options';
-            app.OptionsPanel.Position = [1015 170 518 138];
+            app.OptionsPanel.Position = [1015 1 518 307];
 
             % Create DtEditFieldLabel
             app.DtEditFieldLabel = uilabel(app.OptionsPanel);
             app.DtEditFieldLabel.HorizontalAlignment = 'right';
-            app.DtEditFieldLabel.Position = [149 91 25 22];
+            app.DtEditFieldLabel.Position = [149 260 25 22];
             app.DtEditFieldLabel.Text = 'Dt';
 
             % Create DtEditField
             app.DtEditField = uieditfield(app.OptionsPanel, 'numeric');
             app.DtEditField.ValueDisplayFormat = '%.8f';
-            app.DtEditField.Position = [185 93 59 17];
+            app.DtEditField.Position = [185 262 59 17];
 
             % Create DpEditFieldLabel
             app.DpEditFieldLabel = uilabel(app.OptionsPanel);
             app.DpEditFieldLabel.HorizontalAlignment = 'right';
-            app.DpEditFieldLabel.Position = [149 62 25 22];
+            app.DpEditFieldLabel.Position = [149 231 25 22];
             app.DpEditFieldLabel.Text = 'Dp';
 
             % Create DpEditField
             app.DpEditField = uieditfield(app.OptionsPanel, 'numeric');
             app.DpEditField.ValueDisplayFormat = '%.8f';
-            app.DpEditField.Position = [185 64 59 18];
+            app.DpEditField.Position = [185 233 59 18];
 
             % Create pFEditFieldLabel
             app.pFEditFieldLabel = uilabel(app.OptionsPanel);
             app.pFEditFieldLabel.HorizontalAlignment = 'right';
-            app.pFEditFieldLabel.Position = [149 34 25 22];
+            app.pFEditFieldLabel.Position = [149 203 25 22];
             app.pFEditFieldLabel.Text = 'pF';
 
             % Create pFEditField
             app.pFEditField = uieditfield(app.OptionsPanel, 'numeric');
             app.pFEditField.ValueDisplayFormat = '%.8f';
-            app.pFEditField.Position = [185 35 59 19];
+            app.pFEditField.Position = [185 204 59 19];
 
             % Create ADCEditFieldLabel
             app.ADCEditFieldLabel = uilabel(app.OptionsPanel);
             app.ADCEditFieldLabel.HorizontalAlignment = 'right';
-            app.ADCEditFieldLabel.Position = [144 8 30 22];
+            app.ADCEditFieldLabel.Position = [144 177 30 22];
             app.ADCEditFieldLabel.Text = 'ADC';
 
             % Create ADCEditField
             app.ADCEditField = uieditfield(app.OptionsPanel, 'numeric');
             app.ADCEditField.ValueDisplayFormat = '%.8f';
-            app.ADCEditField.Position = [185 10 59 18];
+            app.ADCEditField.Position = [185 179 59 18];
 
             % Create CalculateButton
             app.CalculateButton = uibutton(app.OptionsPanel, 'push');
             app.CalculateButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateButtonPushed, true);
             app.CalculateButton.Icon = fullfile(pathToMLAPP, 'icons', 'calculate.png');
-            app.CalculateButton.Position = [414 -4 98 35];
+            app.CalculateButton.Position = [414 165 98 35];
             app.CalculateButton.Text = 'Calculate';
 
             % Create ROIStyleDropDownLabel
             app.ROIStyleDropDownLabel = uilabel(app.OptionsPanel);
             app.ROIStyleDropDownLabel.HorizontalAlignment = 'right';
-            app.ROIStyleDropDownLabel.Position = [354 83 56 22];
+            app.ROIStyleDropDownLabel.Position = [354 252 56 22];
             app.ROIStyleDropDownLabel.Text = 'ROI Style';
 
             % Create ROIStyleDropDown
             app.ROIStyleDropDown = uidropdown(app.OptionsPanel);
             app.ROIStyleDropDown.Items = {'Rectangle', 'Polygon', 'Freehand', 'Assisted'};
-            app.ROIStyleDropDown.Position = [425 83 84 20];
+            app.ROIStyleDropDown.Position = [425 252 84 20];
             app.ROIStyleDropDown.Value = 'Rectangle';
 
             % Create DrawROIButton
@@ -2179,18 +2302,90 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.DrawROIButton.ValueChangedFcn = createCallbackFcn(app, @DrawROIButtonValueChanged, true);
             app.DrawROIButton.Icon = fullfile(pathToMLAPP, 'icons', 'draw.png');
             app.DrawROIButton.Text = 'DrawROI';
-            app.DrawROIButton.Position = [420 43 94 35];
+            app.DrawROIButton.Position = [420 212 94 35];
 
             % Create DrawMultipleROIButton
             app.DrawMultipleROIButton = uibutton(app.OptionsPanel, 'push');
             app.DrawMultipleROIButton.ButtonPushedFcn = createCallbackFcn(app, @DrawMultipleROIButtonPushed, true);
             app.DrawMultipleROIButton.Icon = fullfile(pathToMLAPP, 'icons', 'multidraw.png');
-            app.DrawMultipleROIButton.Position = [256 42 158 35];
+            app.DrawMultipleROIButton.Position = [256 211 158 35];
             app.DrawMultipleROIButton.Text = 'Draw Multiple ROI';
 
             % Create MultiRoiSwitch
             app.MultiRoiSwitch = uiswitch(app.OptionsPanel, 'slider');
-            app.MultiRoiSwitch.Position = [325 14 45 20];
+            app.MultiRoiSwitch.Position = [325 183 45 20];
+
+            % Create DfastEditFieldLabel
+            app.DfastEditFieldLabel = uilabel(app.OptionsPanel);
+            app.DfastEditFieldLabel.HorizontalAlignment = 'right';
+            app.DfastEditFieldLabel.Position = [146 150 33 22];
+            app.DfastEditFieldLabel.Text = 'Dfast';
+
+            % Create DfastEditField
+            app.DfastEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.DfastEditField.ValueDisplayFormat = '%.8f';
+            app.DfastEditField.Position = [190 152 59 18];
+
+            % Create DinterEditFieldLabel
+            app.DinterEditFieldLabel = uilabel(app.OptionsPanel);
+            app.DinterEditFieldLabel.HorizontalAlignment = 'right';
+            app.DinterEditFieldLabel.Position = [142 122 37 22];
+            app.DinterEditFieldLabel.Text = 'Dinter';
+
+            % Create DinterEditField
+            app.DinterEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.DinterEditField.ValueDisplayFormat = '%.8f';
+            app.DinterEditField.Position = [190 124 59 18];
+
+            % Create DslowEditField_5Label
+            app.DslowEditField_5Label = uilabel(app.OptionsPanel);
+            app.DslowEditField_5Label.HorizontalAlignment = 'right';
+            app.DslowEditField_5Label.Position = [143 98 38 22];
+            app.DslowEditField_5Label.Text = 'Dslow';
+
+            % Create DslowEditField
+            app.DslowEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.DslowEditField.ValueDisplayFormat = '%.8f';
+            app.DslowEditField.Position = [192 100 59 18];
+
+            % Create ImportFromLastDatabaseButton
+            app.ImportFromLastDatabaseButton = uibutton(app.OptionsPanel, 'push');
+            app.ImportFromLastDatabaseButton.ButtonPushedFcn = createCallbackFcn(app, @ImportFromLastDatabaseButtonPushed, true);
+            app.ImportFromLastDatabaseButton.Position = [187 1 161 26];
+            app.ImportFromLastDatabaseButton.Text = 'Import From Last Database';
+
+            % Create pFfastEditFieldLabel
+            app.pFfastEditFieldLabel = uilabel(app.OptionsPanel);
+            app.pFfastEditFieldLabel.HorizontalAlignment = 'right';
+            app.pFfastEditFieldLabel.Position = [143 73 38 22];
+            app.pFfastEditFieldLabel.Text = 'pFfast';
+
+            % Create pFfastEditField
+            app.pFfastEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.pFfastEditField.ValueDisplayFormat = '%.8f';
+            app.pFfastEditField.Position = [192 75 59 18];
+
+            % Create pFinterEditFieldLabel
+            app.pFinterEditFieldLabel = uilabel(app.OptionsPanel);
+            app.pFinterEditFieldLabel.HorizontalAlignment = 'right';
+            app.pFinterEditFieldLabel.Position = [140 52 42 22];
+            app.pFinterEditFieldLabel.Text = 'pFinter';
+
+            % Create pFinterEditField
+            app.pFinterEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.pFinterEditField.ValueDisplayFormat = '%.8f';
+            app.pFinterEditField.Position = [193 54 59 18];
+
+            % Create pFslowEditFieldLabel
+            app.pFslowEditFieldLabel = uilabel(app.OptionsPanel);
+            app.pFslowEditFieldLabel.HorizontalAlignment = 'right';
+            app.pFslowEditFieldLabel.Position = [139 32 43 22];
+            app.pFslowEditFieldLabel.Text = 'pFslow';
+
+            % Create pFslowEditField
+            app.pFslowEditField = uieditfield(app.OptionsPanel, 'numeric');
+            app.pFslowEditField.ValueDisplayFormat = '%.8f';
+            app.pFslowEditField.Position = [193 34 59 18];
 
             % Create LoadDICOMButton
             app.LoadDICOMButton = uibutton(app.CalculatorTab, 'push');
@@ -2226,6 +2421,11 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.BayesianButton = uiradiobutton(app.AlgorithmButtonGroup);
             app.BayesianButton.Text = 'Bayesian';
             app.BayesianButton.Position = [7 26 71 22];
+
+            % Create TriExpButton
+            app.TriExpButton = uiradiobutton(app.AlgorithmButtonGroup);
+            app.TriExpButton.Text = 'TriExp';
+            app.TriExpButton.Position = [7 5 56 22];
 
             % Create EditField
             app.EditField = uieditfield(app.CalculatorTab, 'numeric');
@@ -2313,12 +2513,6 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.SmoothingDegreeEditField = uieditfield(app.CalculatorTab, 'numeric');
             app.SmoothingDegreeEditField.Position = [1475 131 51 22];
 
-            % Create ImportFromLastDatabaseButton
-            app.ImportFromLastDatabaseButton = uibutton(app.CalculatorTab, 'push');
-            app.ImportFromLastDatabaseButton.ButtonPushedFcn = createCallbackFcn(app, @ImportFromLastDatabaseButtonPushed, true);
-            app.ImportFromLastDatabaseButton.Position = [1211 21 161 26];
-            app.ImportFromLastDatabaseButton.Text = 'Import From Last Database';
-
             % Create LocationEditFieldLabel
             app.LocationEditFieldLabel = uilabel(app.CalculatorTab);
             app.LocationEditFieldLabel.HorizontalAlignment = 'right';
@@ -2349,6 +2543,12 @@ MOVINGREG.SpatialRefObj = fixedRefObj;
             app.UseMedullaROIFromSegmenterButton.Enable = 'off';
             app.UseMedullaROIFromSegmenterButton.Position = [15 89 201 32];
             app.UseMedullaROIFromSegmenterButton.Text = 'Use Medulla ROI From Segmenter';
+
+            % Create CopyDataButton
+            app.CopyDataButton = uibutton(app.CalculatorTab, 'push');
+            app.CopyDataButton.ButtonPushedFcn = createCallbackFcn(app, @CopyDataButtonPushed, true);
+            app.CopyDataButton.Position = [1041 313 140 31];
+            app.CopyDataButton.Text = 'Copy Data';
 
             % Create DicomTab
             app.DicomTab = uitab(app.TabGroup);
