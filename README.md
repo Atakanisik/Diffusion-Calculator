@@ -39,11 +39,6 @@ You can see your DICOM Collection on DICOM TAB
 
 ![resim](assets/img5.png)
 
-Then You can calculate IVIM and ADC parameters via just pressing the calculate button.
-2 Algorithm is included for IVIM free-fit and Segmented-fit. You can select the algorithms from radio buttons. After Calculation will be completed you can see all parameters and fitting curve.If you use all algorithms you can generate maps for specific regions.
-
-![resim](https://github.com/user-attachments/assets/48285315-b60b-467a-906e-aa70d19b75c8)
-
 
 -Register:
 --You can register 2 images from the same patient in Register tab. You can use either whole image or segmented locations for registering. Select and load desired sequences for fixed and moving image. After that for segmentation you cand draw ROI for segmentation location. Med-SAM inference will segment the desired organs. Do the same for moving image then select the segments via "fixed segment" and "moving segments buttons for registration.
