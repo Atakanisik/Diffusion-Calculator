@@ -1,12 +1,12 @@
 # Diffusion-Calculator
 Executable for Latest Version Download Link:https://drive.google.com/file/d/1an0g2nTdxhH4tO7LH9vIaaHSuZZhV5pb/view?usp=drive_link\
 
-Diffusion Calculator is for Calculation IVIM and ADC parameters from DWI-MRI images designed for renal sequences but also can bu used other sections. Designed and coded using images from SIEMENS vendor MRI.\
+Diffusion Calculator is for Calculation IVIM and ADC parameters from DWI-MRI images designed for renal sequences but also can bu used other sections. Designed and coded using images from SIEMENS vendor MRI.
 
 Opening Tab and Load DICOM:\
--Use Load DICOM button on bottom right in Calculator TAB for importing DICOM series. You can import multiple DICOM series at once. When Loading is finished you can see a warning on bottom left.\
+-Use Load DICOM button on bottom right in Calculator TAB for importing DICOM series. You can import multiple DICOM series at once. When Loading is finished you can see a warning on bottom left.
 
-![resim](assets/img1.png)\
+![resim](assets/img1.png)
 
 
 
