@@ -69,8 +69,8 @@ Then You can calculate IVIM and ADC parameters via just pressing the calculate b
 
 ![resim](assets/img11.png)
 ![resim](assets/img12.png)
-![resim](assets/img3.png)
-![resim](assets/img4.png)
+![resim](assets/img13.png)
+![resim](assets/img14.png)
 
 
 Iff you use this  application please refer  as:
