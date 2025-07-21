@@ -17,17 +17,17 @@ You can see your DICOM Collection on DICOM TAB\
 3-Patient List\
 4-Sequence List\
 5-Save and Load Database Buttons\
-6-Routing Buttons\
+6-Routing Buttons
 
 
 -Viewer:\
---You can load any sequence on Viewer Tab by "Load to Viewer" button in "DICOM" tab.You can traveling along instances and adjusting contrast and brightness via lateral sliders and changing color palette with colormap selection.\
+--You can load any sequence on Viewer Tab by "Load to Viewer" button in "DICOM" tab.You can traveling along instances and adjusting contrast and brightness via lateral sliders and changing color palette with colormap selection.
 
 ![resim](assets/img3.png)\
 1-Instance Slider\
 2-Brightness Slider\
 3-Contrast Slider\
-4-Colormap Menu\
+4-Colormap Menu
 
 -Maps:\
 -- You can visulaze parametric maps after calculating IVIM and Diffusion parameters \
@@ -35,23 +35,23 @@ You can see your DICOM Collection on DICOM TAB\
 
 
 -BOLD Processor:\
---You can use BOLD(R2*) Processor for recalculate R2* images from multi TE Series you can monitor the oxygenization from these Series. In this tab you are allowed to draw ROI on desired locations and can calculate and visualize R2* value and map.\
+--You can use BOLD(R2*) Processor for recalculate R2* images from multi TE Series you can monitor the oxygenization from these Series. In this tab you are allowed to draw ROI on desired locations and can calculate and visualize R2* value and map.
 
 ![resim](assets/img5.png)
 
 
 -Register:\
 --You can register 2 images from the same patient in Register tab. You can use either whole image or segmented locations for registering. Select and load desired sequences for fixed and moving image. After that for segmentation you cand draw ROI for segmentation location. Med-SAM inference will segment the desired organs. Do the same for moving image then select the segments via "fixed segment" and "moving segments buttons for registration.\
---You can use "show pair" button tu visualize corresponding segments at spatial domain. Click "segment guided registration" and visualize registered image and fixed image.You can also send registerd image to segmenter for furhter segmentation.\
+--You can use "show pair" button tu visualize corresponding segments at spatial domain. Click "segment guided registration" and visualize registered image and fixed image.You can also send registerd image to segmenter for furhter segmentation.
 
 ![resim](assets/img6.png)\
-1-Drawed ROI\
+1-Drawed ROI
 ![resim](assets/img7.png)\
 
 -Segmenter:\
 --You can segment registered image for delineate brighter and darker regions. After segmentation you can draw ground truth for bright areas and can calculate jaccard and DICE indexes.\
 ![resim](assets/img8.png)\
-![resim](assets/img9.png)\
+![resim](assets/img9.png)
 
 -Calculator:\
 -You can visualize IVIM images at "Calculator" tab.Either with slice locations or b-value you can  travel along images with corresponding instance or b-value. You can use medulla(dark areas) or cortex(bright areas) segments if you have done segmentation via " Segmenter". Despite segmenter was used, You can freely draw ROIs on desired image.\
@@ -60,12 +60,12 @@ You can see your DICOM Collection on DICOM TAB\
 --After Drawing ROIs select the algorithm under the options section and click "Calculate" button. After calculation is finished you can see all corresponding parameters and can interpret the signal decay curve and fitting graph.After that point you can copy parameter to system clipboard via "Copy Data" button.\
 --Maps generation will working properly afetr all calculations done. You can press generate maps and after "Map generation done" warning you can inspect your parameter maps on the "Maps" tab.\
 --For Maps generation with multi ROIs do not forget turn the switch MultiROI\
---Kernel size is option for visual smoothnes of map higher values means smoother maps.\
+--Kernel size is option for visual smoothnes of map higher values means smoother maps.
 
 ![resim](assets/img11.png)\
 ![resim](assets/img12.png)\
 ![resim](assets/img13.png)\
-![resim](assets/img14.png)\
+![resim](assets/img14.png)
 
 
 Iff you use this  application please refer  as:\
